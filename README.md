@@ -4,6 +4,10 @@ A lightweight Chrome and Edge extension for making long ChatGPT conversations sm
 
 The extension keeps the latest N conversation rounds visible and can collapse older messages behind a small expandable placeholder. It only changes the current page display. It does not delete ChatGPT account data or upload conversation content.
 
+<img width="400" alt="image" src="https://github.com/user-attachments/assets/79c1e828-15bf-4df7-87aa-c1f6233e9095" />
+<img width="410" alt="image" src="https://github.com/user-attachments/assets/bb822f79-15b1-4291-9677-4f75dc0038b8" />
+
+
 ## Current Focus
 
 Long Conversation Experience:
