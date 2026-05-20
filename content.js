@@ -11,7 +11,10 @@ let autoMaintainKeepRounds = 10;
 let cleanupModeEnabled = CLEANUP_MODES.SAFE;
 let observer = null;
 let cleanupTimer = null;
-let autoCleanupPausedUntil = 0;
+let badgeTimer = null;
+let domCheckTimer = null;
+let badgeObserver = null;
+let reconcileQueue = Promise.resolve();
 
 function getMessage(key, substitutions = []) {
   return chrome.i18n.getMessage(key, substitutions);
@@ -31,44 +34,28 @@ function findThread() {
 
 function findTurnElements() {
   const thread = findThread();
-  if (!thread) {
-    return [];
-  }
+  if (!thread) return [];
 
   const turnSections = Array.from(
     thread.querySelectorAll('section[data-testid^="conversation-turn-"][data-turn-id]')
   ).filter(turnEl => !turnEl.dataset.chcPlaceholder);
 
-  if (turnSections.length > 0) {
-    return turnSections;
-  }
+  if (turnSections.length > 0) return turnSections;
 
   return Array.from(thread.querySelectorAll('article'))
     .filter(turnEl => !turnEl.dataset.chcPlaceholder);
 }
 
-function calculateRounds(turnElements) {
-  return Math.floor(turnElements.length / 2);
+function getVisibleTurnElements() {
+  return findTurnElements().filter(turnEl => !turnEl.dataset.chcHidden);
 }
 
-function calculateVisibleRounds(turnElements) {
-  return Math.floor(turnElements.filter(turnEl => !turnEl.dataset.chcHidden).length / 2);
+function calculateRounds(turnCount) {
+  return Math.floor(turnCount / 2);
 }
 
-function getPlaceholderHiddenRounds() {
-  return getExistingPlaceholders().reduce((sum, placeholder) => {
-    return sum + (parseInt(placeholder.dataset.chcHiddenRounds || '0', 10) || 0);
-  }, 0);
-}
-
-function getRoundStats() {
-  const turnElements = findTurnElements();
-  const visibleRounds = calculateVisibleRounds(turnElements);
-  const hiddenRounds = getPlaceholderHiddenRounds();
-  return {
-    visibleRounds,
-    totalRounds: visibleRounds + hiddenRounds
-  };
+function toWholeRoundTurnCount(turnCount) {
+  return Math.max(0, turnCount - (turnCount % 2));
 }
 
 function getConversationId() {
@@ -84,22 +71,37 @@ function getExistingPlaceholders() {
   return Array.from(document.querySelectorAll('[data-chc-placeholder="true"]'));
 }
 
-function getExistingPerformancePlaceholder() {
-  return getExistingPlaceholders()
-    .find(placeholder => placeholder.dataset.chcMode === CLEANUP_MODES.PERFORMANCE);
+function getPlaceholderForMode(mode) {
+  return getExistingPlaceholders().find(placeholder => placeholder.dataset.chcMode === mode) || null;
 }
 
-function removeExistingPlaceholders() {
-  getExistingPlaceholders().forEach((placeholder) => placeholder.remove());
+function getPlaceholderHiddenTurns(placeholder) {
+  return parseInt(placeholder?.dataset.chcHiddenTurns || '0', 10) || 0;
+}
+
+function getPlaceholderHiddenRounds() {
+  return getExistingPlaceholders().reduce((sum, placeholder) => {
+    return sum + (parseInt(placeholder.dataset.chcHiddenRounds || '0', 10) || 0);
+  }, 0);
+}
+
+function getRoundStats() {
+  const visibleRounds = calculateRounds(getVisibleTurnElements().length);
+  return {
+    visibleRounds,
+    totalRounds: visibleRounds + getPlaceholderHiddenRounds()
+  };
 }
 
 function showTurn(turnEl) {
   delete turnEl.dataset.chcHidden;
+  delete turnEl.dataset.chcGroupId;
   turnEl.style.removeProperty('display');
 }
 
-function hideTurn(turnEl) {
+function hideTurn(turnEl, groupId) {
   turnEl.dataset.chcHidden = 'true';
+  turnEl.dataset.chcGroupId = groupId;
   turnEl.style.display = 'none';
 }
 
@@ -110,15 +112,25 @@ function parseHtmlNodes(htmlList) {
   });
 }
 
-function insertNodesBefore(nodes, placeholder) {
-  const parent = placeholder.parentNode;
+function insertNodesAfter(nodes, anchor) {
+  const parent = anchor?.parentNode;
   if (!parent) return 0;
-
+  let referenceNode = anchor.nextSibling;
   nodes.forEach((node) => {
     markRestoredSnapshotNode(node);
-    parent.insertBefore(node, placeholder);
+    parent.insertBefore(node, referenceNode);
   });
   return nodes.length;
+}
+
+function moveTurnsAfter(turns, anchor) {
+  const parent = anchor?.parentNode;
+  if (!parent) return 0;
+  const referenceNode = anchor.nextSibling;
+  turns.forEach((turn) => {
+    parent.insertBefore(turn, referenceNode);
+  });
+  return turns.length;
 }
 
 function markRestoredSnapshotNode(node) {
@@ -155,111 +167,35 @@ function hideRestoredSnapshotControls(root) {
   });
 }
 
-async function expandSafePlaceholder(placeholder) {
-  const groupId = placeholder.dataset.chcGroupId;
-  findTurnElements()
-    .filter(turnEl => turnEl.dataset.chcGroupId === groupId)
-    .forEach((turnEl) => {
-      delete turnEl.dataset.chcGroupId;
-      showTurn(turnEl);
-    });
-  placeholder.remove();
-  scheduleBadgeUpdate();
-}
-
-async function expandPerformancePlaceholder(placeholder) {
-  pauseAutoCleanup(3000);
-  const groupId = placeholder.dataset.chcGroupId;
-  const response = await sendRuntimeMessage({
-    action: 'getCollapsedSnapshot',
-    groupId
-  });
-
-  if (!response?.success || !response.snapshot?.html) {
-    placeholder.textContent = getMessage('snapshotRestoreFailed');
-    return;
-  }
-
-  const nodes = parseHtmlNodes(response.snapshot.html);
-  const insertedCount = insertNodesBefore(nodes, placeholder);
-  if (insertedCount === 0) {
-    placeholder.textContent = getMessage('snapshotRestoreFailed');
-    return;
-  }
-
-  placeholder.remove();
-
-  await sendRuntimeMessage({
-    action: 'deleteCollapsedSnapshot',
-    groupId
-  }).catch(() => {});
-
-  scheduleBadgeUpdate();
-}
-
-function setPlaceholderContent(placeholder, { mode, hiddenRounds, canExpand }) {
+function setPlaceholderContent(placeholder, { mode, hiddenTurns }) {
+  const hiddenRounds = calculateRounds(hiddenTurns);
+  const canExpand = mode !== CLEANUP_MODES.REMOVE && !autoMaintainEnabled && hiddenTurns > 0;
   const modeLabelKey = mode === CLEANUP_MODES.PERFORMANCE
     ? 'performanceHiddenOlderMessages'
     : mode === CLEANUP_MODES.REMOVE
       ? 'removedOlderMessages'
       : 'hiddenOlderMessages';
+
+  placeholder.dataset.chcHiddenTurns = String(hiddenTurns);
+  placeholder.dataset.chcHiddenRounds = String(hiddenRounds);
   placeholder.textContent = getMessage(modeLabelKey, [hiddenRounds.toString()]);
 
   if (canExpand) {
-    const expandText = getMessage('expandHiddenMessages');
-    if (expandText) {
-      const expand = document.createElement('span');
-      expand.textContent = ` ${expandText}`;
-      expand.style.textDecoration = 'underline';
-      expand.style.marginLeft = '6px';
-      placeholder.appendChild(expand);
-    }
+    const expand = document.createElement('span');
+    expand.textContent = ` ${getMessage('expandHiddenMessages')}`;
+    expand.style.textDecoration = 'underline';
+    expand.style.marginLeft = '6px';
+    placeholder.appendChild(expand);
   } else if (mode !== CLEANUP_MODES.REMOVE && autoMaintainEnabled) {
-    const hint = getMessage('turnOffAutoMaintainToExpand');
-    if (hint) {
-      const hintEl = document.createElement('span');
-      hintEl.textContent = ` ${hint}`;
-      hintEl.style.display = 'block';
-      hintEl.style.fontWeight = '400';
-      hintEl.style.marginTop = '4px';
-      placeholder.appendChild(hintEl);
-    }
+    const hint = document.createElement('span');
+    hint.textContent = ` ${getMessage('turnOffAutoMaintainToExpand')}`;
+    hint.style.display = 'block';
+    hint.style.fontWeight = '400';
+    hint.style.marginTop = '4px';
+    placeholder.appendChild(hint);
   }
-}
 
-function expandPlaceholder(placeholder) {
-  if (autoMaintainEnabled) return;
-  if (placeholder.dataset.chcMode === CLEANUP_MODES.PERFORMANCE) {
-    expandPerformancePlaceholder(placeholder).catch(() => {
-      placeholder.textContent = getMessage('snapshotRestoreFailed');
-    });
-  } else {
-    expandSafePlaceholder(placeholder);
-  }
-}
-
-function bindPlaceholderExpandHandlers(placeholder, canExpand) {
-  placeholder.onclick = null;
-  placeholder.onkeydown = null;
-
-  if (!canExpand) return;
-
-  placeholder.onclick = () => expandPlaceholder(placeholder);
-  placeholder.onkeydown = (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      expandPlaceholder(placeholder);
-    }
-  };
-}
-
-function createPlaceholder({ mode, groupId, hiddenRounds, canExpand }) {
-  const placeholder = document.createElement('section');
-  placeholder.dataset.chcPlaceholder = 'true';
-  placeholder.dataset.chcMode = mode;
-  placeholder.dataset.chcGroupId = groupId;
-  placeholder.dataset.chcHiddenRounds = String(hiddenRounds);
-
+  placeholder.style.cursor = canExpand ? 'pointer' : 'default';
   if (canExpand) {
     placeholder.setAttribute('role', 'button');
     placeholder.tabIndex = 0;
@@ -267,8 +203,14 @@ function createPlaceholder({ mode, groupId, hiddenRounds, canExpand }) {
     placeholder.removeAttribute('role');
     placeholder.removeAttribute('tabindex');
   }
+  bindPlaceholderExpandHandlers(placeholder, canExpand);
+}
 
-  setPlaceholderContent(placeholder, { mode, hiddenRounds, canExpand });
+function createPlaceholder({ mode, groupId, hiddenTurns }) {
+  const placeholder = document.createElement('section');
+  placeholder.dataset.chcPlaceholder = 'true';
+  placeholder.dataset.chcMode = mode;
+  placeholder.dataset.chcGroupId = groupId;
 
   Object.assign(placeholder.style, {
     boxSizing: 'border-box',
@@ -280,275 +222,328 @@ function createPlaceholder({ mode, groupId, hiddenRounds, canExpand }) {
     borderRadius: '8px',
     background: mode === CLEANUP_MODES.REMOVE ? 'rgba(245, 158, 11, 0.10)' : 'rgba(16, 163, 127, 0.08)',
     color: mode === CLEANUP_MODES.REMOVE ? '#92400e' : '#0f766e',
-    cursor: canExpand ? 'pointer' : 'default',
     font: '500 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     textAlign: 'center'
   });
 
-  bindPlaceholderExpandHandlers(placeholder, canExpand);
-
+  setPlaceholderContent(placeholder, { mode, hiddenTurns });
   return placeholder;
+}
+
+function ensurePlaceholder({ mode, groupId, hiddenTurns, beforeTurn }) {
+  let placeholder = getPlaceholderForMode(mode);
+  if (!placeholder) {
+    placeholder = createPlaceholder({ mode, groupId, hiddenTurns });
+    const parent = beforeTurn?.parentNode || findThread();
+    if (parent) parent.insertBefore(placeholder, beforeTurn || parent.firstChild);
+  }
+  placeholder.dataset.chcGroupId = groupId;
+  setPlaceholderContent(placeholder, { mode, hiddenTurns });
+  return placeholder;
+}
+
+function removePlaceholderIfEmpty(mode) {
+  const placeholder = getPlaceholderForMode(mode);
+  if (placeholder && getPlaceholderHiddenTurns(placeholder) <= 0) {
+    placeholder.remove();
+  }
+}
+
+function bindPlaceholderExpandHandlers(placeholder, canExpand) {
+  placeholder.onclick = null;
+  placeholder.onkeydown = null;
+  if (!canExpand) return;
+
+  placeholder.onclick = () => expandPlaceholder(placeholder);
+  placeholder.onkeydown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      expandPlaceholder(placeholder);
+    }
+  };
 }
 
 function refreshPlaceholderInteractivity() {
   getExistingPlaceholders().forEach((placeholder) => {
-    const mode = placeholder.dataset.chcMode;
-    const hiddenRounds = parseInt(placeholder.dataset.chcHiddenRounds || '0', 10);
-    const canExpand = mode !== CLEANUP_MODES.REMOVE && !autoMaintainEnabled;
+    setPlaceholderContent(placeholder, {
+      mode: placeholder.dataset.chcMode,
+      hiddenTurns: getPlaceholderHiddenTurns(placeholder)
+    });
+  });
+}
 
-    if (canExpand) {
-      placeholder.setAttribute('role', 'button');
-      placeholder.tabIndex = 0;
-      placeholder.style.cursor = 'pointer';
+function expandPlaceholder(placeholder) {
+  if (autoMaintainEnabled) return;
+  const mode = placeholder.dataset.chcMode;
+  const store = createStore(mode);
+  store.hiddenCount().then((hiddenCount) => store.restore(hiddenCount)).then(() => {
+    scheduleBadgeUpdate();
+  }).catch(() => {
+    placeholder.textContent = getMessage('snapshotRestoreFailed');
+  });
+}
+
+class SafeDomStore {
+  constructor() {
+    this.mode = CLEANUP_MODES.SAFE;
+    this.groupId = getPlaceholderForMode(this.mode)?.dataset.chcGroupId || makeGroupId(getConversationId());
+  }
+
+  hiddenTurns() {
+    return findTurnElements().filter(turnEl => turnEl.dataset.chcHidden === 'true');
+  }
+
+  hiddenCount() {
+    return this.hiddenTurns().length;
+  }
+
+  async store(turns) {
+    if (turns.length === 0) return this.hiddenCount();
+    const firstVisible = getVisibleTurnElements()[turns.length] || getVisibleTurnElements()[0] || null;
+    const placeholder = ensurePlaceholder({
+      mode: this.mode,
+      groupId: this.groupId,
+      hiddenTurns: this.hiddenCount() + turns.length,
+      beforeTurn: firstVisible
+    });
+    turns.forEach((turn) => {
+      hideTurn(turn, this.groupId);
+      placeholder.parentNode?.insertBefore(turn, placeholder);
+    });
+    setPlaceholderContent(placeholder, { mode: this.mode, hiddenTurns: this.hiddenCount() });
+    return this.hiddenCount();
+  }
+
+  async restore(count) {
+    const placeholder = getPlaceholderForMode(this.mode);
+    if (!placeholder || count <= 0) return this.hiddenCount();
+    const turns = this.hiddenTurns();
+    const restoreTurns = turns.slice(Math.max(0, turns.length - count));
+    restoreTurns.forEach((turn) => {
+      showTurn(turn);
+    });
+    moveTurnsAfter(restoreTurns, placeholder);
+    const hiddenCount = this.hiddenCount();
+    if (hiddenCount === 0) {
+      placeholder.remove();
     } else {
-      placeholder.removeAttribute('role');
-      placeholder.removeAttribute('tabindex');
-      placeholder.style.cursor = 'default';
+      setPlaceholderContent(placeholder, { mode: this.mode, hiddenTurns: hiddenCount });
     }
-
-    setPlaceholderContent(placeholder, { mode, hiddenRounds, canExpand });
-    bindPlaceholderExpandHandlers(placeholder, canExpand);
-  });
-}
-
-function insertPlaceholder(turnElementsToLimit, firstKeptTurn, placeholder) {
-  const parent = firstKeptTurn?.parentNode || turnElementsToLimit.at(-1)?.parentNode;
-  if (parent && turnElementsToLimit.length > 0) {
-    parent.insertBefore(placeholder, firstKeptTurn || null);
+    return hiddenCount;
   }
 }
 
-function collapseSafeTurns(turnElements, turnsToHide) {
-  removeExistingPlaceholders();
+class IndexedDbStore {
+  constructor() {
+    this.mode = CLEANUP_MODES.PERFORMANCE;
+    this.placeholder = getPlaceholderForMode(this.mode);
+    this.groupId = this.placeholder?.dataset.chcGroupId || makeGroupId(getConversationId());
+    this.snapshot = null;
+    this.html = [];
+  }
 
-  const turnElementsToHide = turnElements.slice(0, turnsToHide);
-  const firstKeptTurn = turnElements[turnsToHide];
-  const conversationId = getConversationId();
-  const groupId = makeGroupId(conversationId);
-
-  turnElements.forEach(showTurn);
-  turnElementsToHide.forEach((turnEl) => {
-    turnEl.dataset.chcGroupId = groupId;
-    hideTurn(turnEl);
-  });
-
-  insertPlaceholder(
-    turnElementsToHide,
-    firstKeptTurn,
-    createPlaceholder({
-      mode: CLEANUP_MODES.SAFE,
-      groupId,
-      hiddenRounds: Math.floor(turnElementsToHide.length / 2),
-      canExpand: !autoMaintainEnabled
-    })
-  );
-
-  return Math.floor(turnElementsToHide.length / 2);
-}
-
-async function collapsePerformanceTurns(turnElements, keepRounds) {
-  turnElements.forEach(showTurn);
-
-  const conversationId = getConversationId();
-  const existingPlaceholder = getExistingPerformancePlaceholder();
-  const existingGroupId = existingPlaceholder?.dataset.chcGroupId;
-  let groupId = existingGroupId || makeGroupId(conversationId);
-  let existingSnapshot = null;
-  let existingHtml = [];
-  let existingTurnCount = 0;
-
-  if (existingGroupId) {
-    const existingResponse = await sendRuntimeMessage({
+  async load() {
+    if (this.snapshot !== null) return;
+    if (!this.placeholder) {
+      this.snapshot = null;
+      this.html = [];
+      return;
+    }
+    const response = await sendRuntimeMessage({
       action: 'getCollapsedSnapshot',
-      groupId: existingGroupId
+      groupId: this.groupId
     });
-
-    if (existingResponse?.success && existingResponse.snapshot?.html) {
-      existingSnapshot = existingResponse.snapshot;
-      existingHtml = existingSnapshot.html;
-      existingTurnCount = existingSnapshot.turnCount || existingHtml.length;
-      groupId = existingSnapshot.groupId || existingGroupId;
-    }
+    this.snapshot = response?.success ? response.snapshot : null;
+    this.html = this.snapshot?.html || [];
   }
 
-  const totalTurns = existingTurnCount + turnElements.length;
-  const turnsToKeep = keepRounds * 2;
-  const totalTurnsToDetach = Math.max(0, totalTurns - turnsToKeep);
-  const additionalTurnsToDetach = Math.max(0, totalTurnsToDetach - existingTurnCount);
-  const turnElementsToDetach = turnElements.slice(0, additionalTurnsToDetach);
-  const firstKeptTurn = turnElements[additionalTurnsToDetach];
-  const nextHtml = existingHtml.concat(turnElementsToDetach.map(turnEl => turnEl.outerHTML));
-  const nextTurnCount = existingTurnCount + turnElementsToDetach.length;
-  const roundCount = Math.floor(nextTurnCount / 2);
-
-  if (additionalTurnsToDetach <= 0 && existingPlaceholder) {
-    setPlaceholderContent(existingPlaceholder, {
-      mode: CLEANUP_MODES.PERFORMANCE,
-      hiddenRounds: roundCount,
-      canExpand: !autoMaintainEnabled
-    });
-    existingPlaceholder.dataset.chcHiddenRounds = String(roundCount);
-    return roundCount;
+  async hiddenCount() {
+    await this.load();
+    return this.html.length;
   }
 
-  for (let index = 0; index < nextHtml.length; index += 1) {
-    const turnSaveResponse = await sendRuntimeMessage({
-      action: 'saveCollapsedTurn',
-      groupId,
-      index,
-      html: nextHtml[index]
-    });
-
-    if (!turnSaveResponse?.success) {
-      throw new Error(turnSaveResponse?.message || `Unable to save local snapshot turn ${index}`);
-    }
-  }
-
-  const saveResponse = await sendRuntimeMessage({
-    action: 'saveCollapsedSnapshot',
-    groupId,
-    conversationId,
-    turnCount: nextTurnCount,
-    roundCount,
-    html: []
-  });
-
-  if (!saveResponse?.success) {
-    throw new Error(saveResponse?.message || 'Unable to save local snapshot');
-  }
-
-  if (existingPlaceholder) {
-    setPlaceholderContent(existingPlaceholder, {
-      mode: CLEANUP_MODES.PERFORMANCE,
-      hiddenRounds: roundCount,
-      canExpand: !autoMaintainEnabled
-    });
-    existingPlaceholder.dataset.chcHiddenRounds = String(roundCount);
-  } else {
-    insertPlaceholder(
-      turnElementsToDetach,
-      firstKeptTurn,
-      createPlaceholder({
-        mode: CLEANUP_MODES.PERFORMANCE,
-        groupId,
-        hiddenRounds: roundCount,
-        canExpand: !autoMaintainEnabled
-      })
-    );
-  }
-
-  turnElementsToDetach.forEach((turnEl) => turnEl.remove());
-
-  return roundCount;
-}
-
-function removeOldTurns(turnElements, turnsToRemove) {
-  removeExistingPlaceholders();
-  turnElements.forEach(showTurn);
-
-  const turnElementsToDelete = turnElements.slice(0, turnsToRemove);
-  const firstKeptTurn = turnElements[turnsToRemove];
-  const conversationId = getConversationId();
-  const groupId = makeGroupId(conversationId);
-  const removedRounds = Math.floor(turnElementsToDelete.length / 2);
-
-  insertPlaceholder(
-    turnElementsToDelete,
-    firstKeptTurn,
-    createPlaceholder({
-      mode: CLEANUP_MODES.REMOVE,
-      groupId,
-      hiddenRounds: removedRounds,
-      canExpand: false
-    })
-  );
-
-  turnElementsToDelete.forEach(turnEl => {
-    if (turnEl.parentNode) {
-      turnEl.remove();
-    }
-  });
-
-  return removedRounds;
-}
-
-async function limitOldRounds(keepRounds, cleanupMode) {
-  let turnElements = findTurnElements();
-
-  if (turnElements.length === 0) {
-    return {
-      success: false,
-      message: getMessage('errorNotFound')
-    };
-  }
-
-  const mode = Object.values(CLEANUP_MODES).includes(cleanupMode)
-    ? cleanupMode
-    : CLEANUP_MODES.SAFE;
-
-  const existingPerformancePlaceholder = getExistingPerformancePlaceholder();
-  if (mode !== CLEANUP_MODES.PERFORMANCE && existingPerformancePlaceholder) {
-    await expandPerformancePlaceholder(existingPerformancePlaceholder);
-    turnElements = findTurnElements();
-  }
-
-  const totalTurns = turnElements.length;
-  const turnsToKeep = keepRounds * 2;
-  const turnsToLimit = totalTurns - turnsToKeep;
-
-  if (turnsToLimit <= 0) {
-    const currentPerformancePlaceholder = getExistingPerformancePlaceholder();
-    if (mode === CLEANUP_MODES.PERFORMANCE && currentPerformancePlaceholder) {
-      const response = await sendRuntimeMessage({
-        action: 'getCollapsedSnapshot',
-        groupId: currentPerformancePlaceholder.dataset.chcGroupId
+  async save(html) {
+    for (let index = 0; index < html.length; index += 1) {
+      const turnSaveResponse = await sendRuntimeMessage({
+        action: 'saveCollapsedTurn',
+        groupId: this.groupId,
+        index,
+        html: html[index]
       });
-      const hiddenRounds = response?.snapshot?.roundCount || 0;
-      return {
-        success: true,
-        message: getMessage('successPerformanceDetailed', [hiddenRounds.toString(), keepRounds.toString()]),
-        rounds: calculateRounds(turnElements)
-      };
+      if (!turnSaveResponse?.success) {
+        throw new Error(turnSaveResponse?.message || `Unable to save local snapshot turn ${index}`);
+      }
     }
 
-    turnElements.forEach(showTurn);
-    removeExistingPlaceholders();
-    const currentRounds = calculateRounds(turnElements);
-    return {
-      success: true,
-      message: getMessage('infoNoNeedClean', [currentRounds.toString()]),
-      rounds: currentRounds
-    };
+    const response = await sendRuntimeMessage({
+      action: 'saveCollapsedSnapshot',
+      groupId: this.groupId,
+      conversationId: getConversationId(),
+      turnCount: html.length,
+      roundCount: calculateRounds(html.length),
+      html: []
+    });
+    if (!response?.success) {
+      throw new Error(response?.message || 'Unable to save local snapshot');
+    }
+    this.html = html;
   }
 
-  let limitedRounds;
-  if (mode === CLEANUP_MODES.PERFORMANCE) {
-    limitedRounds = await collapsePerformanceTurns(turnElements, keepRounds);
-  } else if (mode === CLEANUP_MODES.REMOVE) {
-    limitedRounds = removeOldTurns(turnElements, turnsToLimit);
+  async store(turns) {
+    await this.load();
+    if (turns.length === 0) return this.html.length;
+    const firstKeptTurn = getVisibleTurnElements()[turns.length] || null;
+    const nextHtml = this.html.concat(turns.map(turn => turn.outerHTML));
+    await this.save(nextHtml);
+    this.placeholder = ensurePlaceholder({
+      mode: this.mode,
+      groupId: this.groupId,
+      hiddenTurns: nextHtml.length,
+      beforeTurn: firstKeptTurn
+    });
+    turns.forEach(turn => turn.remove());
+    return nextHtml.length;
+  }
+
+  async restore(count) {
+    await this.load();
+    if (!this.placeholder || count <= 0 || this.html.length === 0) return this.html.length;
+    const restoreCount = Math.min(count, this.html.length);
+    const remainingHtml = this.html.slice(0, this.html.length - restoreCount);
+    const restoredHtml = this.html.slice(this.html.length - restoreCount);
+    const restoredNodes = parseHtmlNodes(restoredHtml);
+    insertNodesAfter(restoredNodes, this.placeholder);
+
+    if (remainingHtml.length === 0) {
+      await sendRuntimeMessage({ action: 'deleteCollapsedSnapshot', groupId: this.groupId }).catch(() => {});
+      this.placeholder.remove();
+      this.html = [];
+      return 0;
+    }
+
+    const deleteResponse = await sendRuntimeMessage({
+      action: 'deleteCollapsedTurnsFromIndex',
+      groupId: this.groupId,
+      startIndex: remainingHtml.length
+    });
+    if (!deleteResponse?.success) {
+      throw new Error(deleteResponse?.message || 'Unable to update local snapshot turns');
+    }
+    await this.save(remainingHtml);
+    setPlaceholderContent(this.placeholder, { mode: this.mode, hiddenTurns: remainingHtml.length });
+    return remainingHtml.length;
+  }
+}
+
+class NullStore {
+  constructor() {
+    this.mode = CLEANUP_MODES.REMOVE;
+    this.groupId = getPlaceholderForMode(this.mode)?.dataset.chcGroupId || makeGroupId(getConversationId());
+  }
+
+  hiddenCount() {
+    return getPlaceholderHiddenTurns(getPlaceholderForMode(this.mode));
+  }
+
+  async store(turns) {
+    if (turns.length === 0) return this.hiddenCount();
+    const firstKeptTurn = getVisibleTurnElements()[turns.length] || null;
+    const hiddenTurns = this.hiddenCount() + turns.length;
+    ensurePlaceholder({
+      mode: this.mode,
+      groupId: this.groupId,
+      hiddenTurns,
+      beforeTurn: firstKeptTurn
+    });
+    turns.forEach(turn => turn.remove());
+    return hiddenTurns;
+  }
+
+  async restore() {
+    return this.hiddenCount();
+  }
+}
+
+function createStore(mode) {
+  if (mode === CLEANUP_MODES.PERFORMANCE) return new IndexedDbStore();
+  if (mode === CLEANUP_MODES.REMOVE) return new NullStore();
+  return new SafeDomStore();
+}
+
+async function restoreForeignRecoverableStores(activeMode) {
+  if (activeMode !== CLEANUP_MODES.SAFE) {
+    await new SafeDomStore().restore(Number.MAX_SAFE_INTEGER);
+  }
+  if (activeMode !== CLEANUP_MODES.PERFORMANCE) {
+    await new IndexedDbStore().restore(Number.MAX_SAFE_INTEGER);
+  }
+}
+
+async function reconcileConversation(keepRounds, cleanupMode) {
+  return enqueueReconcile(() => reconcileConversationUnlocked(keepRounds, cleanupMode));
+}
+
+function enqueueReconcile(task) {
+  const nextTask = reconcileQueue.then(task, task);
+  reconcileQueue = nextTask.catch(() => {});
+  return nextTask;
+}
+
+async function reconcileConversationUnlocked(keepRounds, cleanupMode) {
+  const mode = Object.values(CLEANUP_MODES).includes(cleanupMode) ? cleanupMode : CLEANUP_MODES.SAFE;
+  await restoreForeignRecoverableStores(mode);
+
+  const store = createStore(mode);
+  const hiddenCount = await store.hiddenCount();
+  const visibleTurns = getVisibleTurnElements();
+  const targetVisibleTurns = keepRounds * 2;
+
+  if (visibleTurns.length > targetVisibleTurns) {
+    const turnsToStoreCount = toWholeRoundTurnCount(visibleTurns.length - targetVisibleTurns);
+    const turnsToStore = visibleTurns.slice(0, turnsToStoreCount);
+    await store.store(turnsToStore);
+  } else if (visibleTurns.length < targetVisibleTurns && hiddenCount > 0) {
+    const turnsToRestore = toWholeRoundTurnCount(Math.min(targetVisibleTurns - visibleTurns.length, hiddenCount));
+    await store.restore(turnsToRestore);
   } else {
-    limitedRounds = collapseSafeTurns(turnElements, turnsToLimit);
+    const placeholder = getPlaceholderForMode(mode);
+    if (placeholder) {
+      const currentHiddenCount = await store.hiddenCount();
+      if (currentHiddenCount > 0) {
+        setPlaceholderContent(placeholder, { mode, hiddenTurns: currentHiddenCount });
+      } else {
+        placeholder.remove();
+      }
+    }
   }
 
-  const remainingRounds = Math.floor(turnsToKeep / 2);
-  const messageKey = mode === CLEANUP_MODES.PERFORMANCE
-    ? 'successPerformanceDetailed'
-    : mode === CLEANUP_MODES.REMOVE
-      ? 'successCleanedDetailed'
-      : 'successCollapsedDetailed';
-
+  scheduleBadgeUpdate();
+  const stats = getRoundStats();
   return {
     success: true,
-    message: getMessage(messageKey, [limitedRounds.toString(), remainingRounds.toString()]),
-    rounds: remainingRounds
+    message: getModeResultMessage(mode, stats),
+    rounds: stats.visibleRounds,
+    stats
   };
+}
+
+function getModeResultMessage(mode, stats) {
+  const hiddenRounds = Math.max(0, stats.totalRounds - stats.visibleRounds);
+  if (stats.totalRounds === stats.visibleRounds) {
+    return getMessage('infoNoNeedClean', [stats.visibleRounds.toString()]);
+  }
+  if (mode === CLEANUP_MODES.PERFORMANCE) {
+    return getMessage('successPerformanceDetailed', [hiddenRounds.toString(), stats.visibleRounds.toString()]);
+  }
+  if (mode === CLEANUP_MODES.REMOVE) {
+    return getMessage('successCleanedDetailed', [hiddenRounds.toString(), stats.visibleRounds.toString()]);
+  }
+  return getMessage('successCollapsedDetailed', [hiddenRounds.toString(), stats.visibleRounds.toString()]);
 }
 
 async function removeOldRounds(keepRounds, cleanupMode) {
   try {
-    const result = await limitOldRounds(keepRounds, cleanupMode);
-    scheduleBadgeUpdate();
-    return result;
+    return await reconcileConversation(keepRounds, cleanupMode);
   } catch (error) {
     console.error('Failed to limit old conversation rounds:', error);
     return {
@@ -558,29 +553,13 @@ async function removeOldRounds(keepRounds, cleanupMode) {
   }
 }
 
-function pauseAutoCleanup(durationMs) {
-  autoCleanupPausedUntil = Date.now() + durationMs;
-  if (cleanupTimer) {
-    clearTimeout(cleanupTimer);
-    cleanupTimer = null;
-  }
-}
-
 function scheduleAutoCleanup() {
-  if (Date.now() < autoCleanupPausedUntil) return;
   if (cleanupTimer) clearTimeout(cleanupTimer);
   cleanupTimer = setTimeout(() => {
     if (!autoMaintainEnabled) return;
-    if (Date.now() < autoCleanupPausedUntil) return;
-    const turnElements = findTurnElements();
-    const turnsToKeep = autoMaintainKeepRounds * 2;
-    if (turnElements.length > turnsToKeep) {
-      limitOldRounds(autoMaintainKeepRounds, cleanupModeEnabled).catch((error) => {
-        console.error('Auto-maintain failed:', error);
-      }).finally(() => {
-        scheduleBadgeUpdate();
-      });
-    }
+    reconcileConversation(autoMaintainKeepRounds, cleanupModeEnabled).catch((error) => {
+      console.error('Auto-maintain failed:', error);
+    });
   }, 500);
 }
 
@@ -589,9 +568,7 @@ async function runAutoCleanupNow() {
     scheduleBadgeUpdate();
     return { success: true, stats: getRoundStats() };
   }
-
-  const result = await limitOldRounds(autoMaintainKeepRounds, cleanupModeEnabled);
-  scheduleBadgeUpdate();
+  const result = await reconcileConversation(autoMaintainKeepRounds, cleanupModeEnabled);
   return {
     success: result.success,
     message: result.message,
@@ -652,15 +629,11 @@ function updateAutoMaintain(enabled, keepRounds, cleanupMode, runImmediately = f
   autoMaintainEnabled = enabled;
   autoMaintainKeepRounds = keepRounds;
   cleanupModeEnabled = cleanupMode || CLEANUP_MODES.SAFE;
-  if (wasEnabled !== enabled) {
-    refreshPlaceholderInteractivity();
-  }
+  if (wasEnabled !== enabled) refreshPlaceholderInteractivity();
 
   if (enabled) {
     startObserver();
-    if (runImmediately) {
-      return runAutoCleanupNow();
-    }
+    if (runImmediately) return runAutoCleanupNow();
     scheduleAutoCleanup();
   } else {
     stopObserver();
@@ -669,13 +642,9 @@ function updateAutoMaintain(enabled, keepRounds, cleanupMode, runImmediately = f
   return Promise.resolve({ success: true, stats: getRoundStats() });
 }
 
-let badgeTimer = null;
-let domCheckTimer = null;
-
 function runDOMDiagnostic() {
   const thread = findThread();
   if (!thread) return;
-
   const hasMessageContent =
     thread.querySelector('[data-message-author-role]') ||
     thread.querySelector('[data-turn-id]');
@@ -720,8 +689,6 @@ function scheduleBadgeUpdate() {
   }, 300);
 }
 
-let badgeObserver = null;
-
 function startBadgeObserver() {
   if (badgeObserver) return;
   const target = document.documentElement || document.body;
@@ -743,9 +710,7 @@ function startBadgeObserver() {
 }
 
 function resolveCleanupMode(result) {
-  if (result.cleanupMode) {
-    return result.cleanupMode;
-  }
+  if (result.cleanupMode) return result.cleanupMode;
   return result.collapseOldMessages === false ? CLEANUP_MODES.REMOVE : CLEANUP_MODES.SAFE;
 }
 
@@ -767,15 +732,9 @@ async function initAutoMaintain() {
 
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.autoMaintain || changes.keepRounds || changes.cleanupMode || changes.collapseOldMessages) {
-    const enabled = changes.autoMaintain
-      ? changes.autoMaintain.newValue
-      : autoMaintainEnabled;
-    const rounds = changes.keepRounds
-      ? changes.keepRounds.newValue
-      : autoMaintainKeepRounds;
-    const cleanupMode = changes.cleanupMode
-      ? changes.cleanupMode.newValue
-      : cleanupModeEnabled;
+    const enabled = changes.autoMaintain ? changes.autoMaintain.newValue : autoMaintainEnabled;
+    const rounds = changes.keepRounds ? changes.keepRounds.newValue : autoMaintainKeepRounds;
+    const cleanupMode = changes.cleanupMode ? changes.cleanupMode.newValue : cleanupModeEnabled;
     updateAutoMaintain(enabled, rounds, cleanupMode);
   }
 });
@@ -831,8 +790,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function waitForThreadAndInit() {
-  const thread = findThread();
-  if (thread) {
+  if (findThread()) {
     initAutoMaintain();
     return;
   }

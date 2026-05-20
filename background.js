@@ -1,4 +1,4 @@
-// Background Service Worker
+﻿// Background Service Worker
 
 const CHATGPT_HOSTS = ['chat.openai.com', 'chatgpt.com'];
 const SNAPSHOT_DB_NAME = 'ChatGPTHistoryCleanerSnapshots';
@@ -40,7 +40,6 @@ function setBadge(tabId, statsInput) {
       tabId
     });
   }
-  // 通知 popup（若已打开）同步更新轮数显示
   chrome.runtime.sendMessage({
     action: 'badgeUpdated',
     rounds: stats.visibleRounds,
@@ -132,6 +131,14 @@ async function deleteSnapshotTurns(groupId) {
   });
 }
 
+async function deleteSnapshotTurnsFromIndex(groupId, startIndex) {
+  const turns = await getSnapshotTurns(groupId);
+  const removableTurns = turns.filter((turn) => turn.index >= startIndex);
+  await withSnapshotStoreByName(SNAPSHOT_TURN_STORE_NAME, 'readwrite', (store) => {
+    removableTurns.forEach((turn) => store.delete(turn.id));
+  });
+}
+
 async function getAllSnapshots() {
   return withSnapshotStore('readonly', (store) => new Promise((resolve, reject) => {
     const request = store.getAll();
@@ -190,10 +197,10 @@ async function withSnapshotStoreByName(storeName, mode, callback) {
   }
 }
 
-// 扩展安装时的初始化
+// 鎵╁睍瀹夎鏃剁殑鍒濆鍖?
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    // 设置默认配置
+    // 璁剧疆榛樿閰嶇疆
     chrome.storage.local.set({
       enabled: true,
       autoRemove: false,
@@ -203,7 +210,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 
-// 切换到非 ChatGPT 标签时清除 badge
+// 鍒囨崲鍒伴潪 ChatGPT 鏍囩鏃舵竻闄?badge
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   try {
     const tab = await chrome.tabs.get(activeInfo.tabId);
@@ -211,11 +218,11 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
       chrome.action.setBadgeText({ text: '', tabId: activeInfo.tabId });
     }
   } catch (e) {
-    // 标签可能已关闭
+    // 鏍囩鍙兘宸插叧闂?
   }
 });
 
-// 处理来自 content script 或 popup 的消息
+// 澶勭悊鏉ヨ嚜 content script 鎴?popup 鐨勬秷鎭?
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'updateBadge') {
     const tabId = sender.tab?.id;
@@ -236,7 +243,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         tabId
       });
     }
-    // 通知 popup（若已打开）
+    // 閫氱煡 popup锛堣嫢宸叉墦寮€锛?
     chrome.runtime.sendMessage({ action: 'domWarning', tabId }).catch(() => {});
     sendResponse({ success: true });
     return true;
@@ -328,6 +335,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       deleteSnapshot(request.groupId),
       deleteSnapshotTurns(request.groupId)
     ]).then(() => {
+      sendResponse({ success: true });
+    }).catch((error) => {
+      sendResponse({ success: false, message: error.message });
+    });
+    return true;
+  }
+
+  if (request.action === 'deleteCollapsedTurnsFromIndex') {
+    deleteSnapshotTurnsFromIndex(request.groupId, request.startIndex).then(() => {
       sendResponse({ success: true });
     }).catch((error) => {
       sendResponse({ success: false, message: error.message });
