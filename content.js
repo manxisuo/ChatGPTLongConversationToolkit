@@ -1,84 +1,556 @@
-// Content Script - 在 ChatGPT 页面中运行
-// 用于清理历史对话轮次，只保留最近的 N 轮
+// Content Script - runs on ChatGPT pages.
 
-// 获取翻译消息（使用 Chrome i18n API，会根据浏览器语言自动选择）
+const CLEANUP_MODES = {
+  SAFE: 'safe',
+  PERFORMANCE: 'performance',
+  REMOVE: 'remove'
+};
+
+let autoMaintainEnabled = false;
+let autoMaintainKeepRounds = 10;
+let cleanupModeEnabled = CLEANUP_MODES.SAFE;
+let observer = null;
+let cleanupTimer = null;
+let autoCleanupPausedUntil = 0;
+
 function getMessage(key, substitutions = []) {
   return chrome.i18n.getMessage(key, substitutions);
 }
 
-// 向 background 发送当前轮数，更新图标 badge
-function updateBadge(rounds) {
-  chrome.runtime.sendMessage({ action: 'updateBadge', rounds });
+function sendRuntimeMessage(message) {
+  return chrome.runtime.sendMessage(message);
 }
 
-// 查找所有对话节点（兼容旧版 article 和新版 section turn）
+function updateBadge(stats) {
+  sendRuntimeMessage({ action: 'updateBadge', stats }).catch(() => {});
+}
+
+function findThread() {
+  return document.querySelector('#thread');
+}
+
 function findTurnElements() {
-  const thread = document.querySelector('#thread');
+  const thread = findThread();
   if (!thread) {
     return [];
   }
 
-  // 新版 ChatGPT 结构：section[data-testid^="conversation-turn-"]
   const turnSections = Array.from(
     thread.querySelectorAll('section[data-testid^="conversation-turn-"][data-turn-id]')
-  );
+  ).filter(turnEl => !turnEl.dataset.chcPlaceholder);
+
   if (turnSections.length > 0) {
     return turnSections;
   }
 
-  // 旧版结构回退：article
-  return Array.from(thread.querySelectorAll('article'));
+  return Array.from(thread.querySelectorAll('article'))
+    .filter(turnEl => !turnEl.dataset.chcPlaceholder);
 }
 
-// 计算对话轮数（每2个节点 = 1轮）
 function calculateRounds(turnElements) {
   return Math.floor(turnElements.length / 2);
 }
 
-// 清理历史对话轮次
-// 简单方案：保留最后 2N 个 article，删除前面所有的
-function removeOldRounds(keepRounds) {
-  try {
-    const turnElements = findTurnElements();
+function calculateVisibleRounds(turnElements) {
+  return Math.floor(turnElements.filter(turnEl => !turnEl.dataset.chcHidden).length / 2);
+}
 
-    if (turnElements.length === 0) {
-      return {
-        success: false,
-        message: getMessage('errorNotFound')
-      };
+function getPlaceholderHiddenRounds() {
+  return getExistingPlaceholders().reduce((sum, placeholder) => {
+    return sum + (parseInt(placeholder.dataset.chcHiddenRounds || '0', 10) || 0);
+  }, 0);
+}
+
+function getRoundStats() {
+  const turnElements = findTurnElements();
+  const visibleRounds = calculateVisibleRounds(turnElements);
+  const hiddenRounds = getPlaceholderHiddenRounds();
+  return {
+    visibleRounds,
+    totalRounds: visibleRounds + hiddenRounds
+  };
+}
+
+function getConversationId() {
+  const match = location.pathname.match(/\/c\/([^/?#]+)/);
+  return match?.[1] || 'unknown-conversation';
+}
+
+function makeGroupId(conversationId) {
+  return `${conversationId}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getExistingPlaceholders() {
+  return Array.from(document.querySelectorAll('[data-chc-placeholder="true"]'));
+}
+
+function getExistingPerformancePlaceholder() {
+  return getExistingPlaceholders()
+    .find(placeholder => placeholder.dataset.chcMode === CLEANUP_MODES.PERFORMANCE);
+}
+
+function removeExistingPlaceholders() {
+  getExistingPlaceholders().forEach((placeholder) => placeholder.remove());
+}
+
+function showTurn(turnEl) {
+  delete turnEl.dataset.chcHidden;
+  turnEl.style.removeProperty('display');
+}
+
+function hideTurn(turnEl) {
+  turnEl.dataset.chcHidden = 'true';
+  turnEl.style.display = 'none';
+}
+
+function parseHtmlNodes(htmlList) {
+  return htmlList.flatMap((html) => {
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    return Array.from(parsed.body.children).map(node => document.importNode(node, true));
+  });
+}
+
+function insertNodesBefore(nodes, placeholder) {
+  const parent = placeholder.parentNode;
+  if (!parent) return 0;
+
+  nodes.forEach((node) => {
+    markRestoredSnapshotNode(node);
+    parent.insertBefore(node, placeholder);
+  });
+  return nodes.length;
+}
+
+function markRestoredSnapshotNode(node) {
+  if (node.nodeType !== Node.ELEMENT_NODE) return;
+  node.dataset.chcRestoredSnapshot = 'true';
+  hideRestoredSnapshotControls(node);
+}
+
+function hideRestoredSnapshotControls(root) {
+  const controlSelectors = [
+    'button',
+    '[role="button"]',
+    '[data-testid*="copy"]',
+    '[data-testid*="feedback"]',
+    '[data-testid*="share"]',
+    '[data-testid*="voice"]',
+    '[data-testid*="regenerate"]',
+    '[aria-label*="Copy"]',
+    '[aria-label*="copy"]',
+    '[aria-label*="Good response"]',
+    '[aria-label*="Bad response"]',
+    '[aria-label*="Read aloud"]',
+    '[aria-label*="Regenerate"]',
+    '[aria-label*="Share"]',
+    '[aria-label*="复制"]',
+    '[aria-label*="朗读"]',
+    '[aria-label*="重新生成"]',
+    '[aria-label*="分享"]'
+  ];
+
+  root.querySelectorAll(controlSelectors.join(',')).forEach((control) => {
+    control.dataset.chcHiddenNativeControl = 'true';
+    control.style.display = 'none';
+  });
+}
+
+async function expandSafePlaceholder(placeholder) {
+  const groupId = placeholder.dataset.chcGroupId;
+  findTurnElements()
+    .filter(turnEl => turnEl.dataset.chcGroupId === groupId)
+    .forEach((turnEl) => {
+      delete turnEl.dataset.chcGroupId;
+      showTurn(turnEl);
+    });
+  placeholder.remove();
+  scheduleBadgeUpdate();
+}
+
+async function expandPerformancePlaceholder(placeholder) {
+  pauseAutoCleanup(3000);
+  const groupId = placeholder.dataset.chcGroupId;
+  const response = await sendRuntimeMessage({
+    action: 'getCollapsedSnapshot',
+    groupId
+  });
+
+  if (!response?.success || !response.snapshot?.html) {
+    placeholder.textContent = getMessage('snapshotRestoreFailed');
+    return;
+  }
+
+  const nodes = parseHtmlNodes(response.snapshot.html);
+  const insertedCount = insertNodesBefore(nodes, placeholder);
+  if (insertedCount === 0) {
+    placeholder.textContent = getMessage('snapshotRestoreFailed');
+    return;
+  }
+
+  placeholder.remove();
+
+  await sendRuntimeMessage({
+    action: 'deleteCollapsedSnapshot',
+    groupId
+  }).catch(() => {});
+
+  scheduleBadgeUpdate();
+}
+
+function setPlaceholderContent(placeholder, { mode, hiddenRounds, canExpand }) {
+  const modeLabelKey = mode === CLEANUP_MODES.PERFORMANCE
+    ? 'performanceHiddenOlderMessages'
+    : mode === CLEANUP_MODES.REMOVE
+      ? 'removedOlderMessages'
+      : 'hiddenOlderMessages';
+  placeholder.textContent = getMessage(modeLabelKey, [hiddenRounds.toString()]);
+
+  if (canExpand) {
+    const expandText = getMessage('expandHiddenMessages');
+    if (expandText) {
+      const expand = document.createElement('span');
+      expand.textContent = ` ${expandText}`;
+      expand.style.textDecoration = 'underline';
+      expand.style.marginLeft = '6px';
+      placeholder.appendChild(expand);
+    }
+  } else if (mode !== CLEANUP_MODES.REMOVE && autoMaintainEnabled) {
+    const hint = getMessage('turnOffAutoMaintainToExpand');
+    if (hint) {
+      const hintEl = document.createElement('span');
+      hintEl.textContent = ` ${hint}`;
+      hintEl.style.display = 'block';
+      hintEl.style.fontWeight = '400';
+      hintEl.style.marginTop = '4px';
+      placeholder.appendChild(hintEl);
+    }
+  }
+}
+
+function expandPlaceholder(placeholder) {
+  if (autoMaintainEnabled) return;
+  if (placeholder.dataset.chcMode === CLEANUP_MODES.PERFORMANCE) {
+    expandPerformancePlaceholder(placeholder).catch(() => {
+      placeholder.textContent = getMessage('snapshotRestoreFailed');
+    });
+  } else {
+    expandSafePlaceholder(placeholder);
+  }
+}
+
+function bindPlaceholderExpandHandlers(placeholder, canExpand) {
+  placeholder.onclick = null;
+  placeholder.onkeydown = null;
+
+  if (!canExpand) return;
+
+  placeholder.onclick = () => expandPlaceholder(placeholder);
+  placeholder.onkeydown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      expandPlaceholder(placeholder);
+    }
+  };
+}
+
+function createPlaceholder({ mode, groupId, hiddenRounds, canExpand }) {
+  const placeholder = document.createElement('section');
+  placeholder.dataset.chcPlaceholder = 'true';
+  placeholder.dataset.chcMode = mode;
+  placeholder.dataset.chcGroupId = groupId;
+  placeholder.dataset.chcHiddenRounds = String(hiddenRounds);
+
+  if (canExpand) {
+    placeholder.setAttribute('role', 'button');
+    placeholder.tabIndex = 0;
+  } else {
+    placeholder.removeAttribute('role');
+    placeholder.removeAttribute('tabindex');
+  }
+
+  setPlaceholderContent(placeholder, { mode, hiddenRounds, canExpand });
+
+  Object.assign(placeholder.style, {
+    boxSizing: 'border-box',
+    margin: '12px auto',
+    maxWidth: '768px',
+    width: 'calc(100% - 32px)',
+    padding: '12px 14px',
+    border: '1px solid rgba(16, 163, 127, 0.28)',
+    borderRadius: '8px',
+    background: mode === CLEANUP_MODES.REMOVE ? 'rgba(245, 158, 11, 0.10)' : 'rgba(16, 163, 127, 0.08)',
+    color: mode === CLEANUP_MODES.REMOVE ? '#92400e' : '#0f766e',
+    cursor: canExpand ? 'pointer' : 'default',
+    font: '500 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    textAlign: 'center'
+  });
+
+  bindPlaceholderExpandHandlers(placeholder, canExpand);
+
+  return placeholder;
+}
+
+function refreshPlaceholderInteractivity() {
+  getExistingPlaceholders().forEach((placeholder) => {
+    const mode = placeholder.dataset.chcMode;
+    const hiddenRounds = parseInt(placeholder.dataset.chcHiddenRounds || '0', 10);
+    const canExpand = mode !== CLEANUP_MODES.REMOVE && !autoMaintainEnabled;
+
+    if (canExpand) {
+      placeholder.setAttribute('role', 'button');
+      placeholder.tabIndex = 0;
+      placeholder.style.cursor = 'pointer';
+    } else {
+      placeholder.removeAttribute('role');
+      placeholder.removeAttribute('tabindex');
+      placeholder.style.cursor = 'default';
     }
 
-    const totalTurns = turnElements.length;
-    const turnsToKeep = keepRounds * 2;
-    const turnsToRemove = totalTurns - turnsToKeep;
+    setPlaceholderContent(placeholder, { mode, hiddenRounds, canExpand });
+    bindPlaceholderExpandHandlers(placeholder, canExpand);
+  });
+}
 
-    if (turnsToRemove <= 0) {
-      const currentRounds = Math.floor(totalTurns / 2);
-      return {
-        success: true,
-        message: getMessage('infoNoNeedClean', [currentRounds.toString()]),
-        rounds: currentRounds
-      };
-    }
+function insertPlaceholder(turnElementsToLimit, firstKeptTurn, placeholder) {
+  const parent = firstKeptTurn?.parentNode || turnElementsToLimit.at(-1)?.parentNode;
+  if (parent && turnElementsToLimit.length > 0) {
+    parent.insertBefore(placeholder, firstKeptTurn || null);
+  }
+}
 
-    // 删除最旧的节点（保留最新）
-    const turnElementsToDelete = turnElements.slice(0, turnsToRemove);
-    turnElementsToDelete.forEach(turnEl => {
-      if (turnEl.parentNode) {
-        turnEl.remove();
-      }
+function collapseSafeTurns(turnElements, turnsToHide) {
+  removeExistingPlaceholders();
+
+  const turnElementsToHide = turnElements.slice(0, turnsToHide);
+  const firstKeptTurn = turnElements[turnsToHide];
+  const conversationId = getConversationId();
+  const groupId = makeGroupId(conversationId);
+
+  turnElements.forEach(showTurn);
+  turnElementsToHide.forEach((turnEl) => {
+    turnEl.dataset.chcGroupId = groupId;
+    hideTurn(turnEl);
+  });
+
+  insertPlaceholder(
+    turnElementsToHide,
+    firstKeptTurn,
+    createPlaceholder({
+      mode: CLEANUP_MODES.SAFE,
+      groupId,
+      hiddenRounds: Math.floor(turnElementsToHide.length / 2),
+      canExpand: !autoMaintainEnabled
+    })
+  );
+
+  return Math.floor(turnElementsToHide.length / 2);
+}
+
+async function collapsePerformanceTurns(turnElements, keepRounds) {
+  turnElements.forEach(showTurn);
+
+  const conversationId = getConversationId();
+  const existingPlaceholder = getExistingPerformancePlaceholder();
+  const existingGroupId = existingPlaceholder?.dataset.chcGroupId;
+  let groupId = existingGroupId || makeGroupId(conversationId);
+  let existingSnapshot = null;
+  let existingHtml = [];
+  let existingTurnCount = 0;
+
+  if (existingGroupId) {
+    const existingResponse = await sendRuntimeMessage({
+      action: 'getCollapsedSnapshot',
+      groupId: existingGroupId
     });
 
-    const removedRounds = Math.floor(turnsToRemove / 2);
-    const remainingRounds = Math.floor(turnsToKeep / 2);
+    if (existingResponse?.success && existingResponse.snapshot?.html) {
+      existingSnapshot = existingResponse.snapshot;
+      existingHtml = existingSnapshot.html;
+      existingTurnCount = existingSnapshot.turnCount || existingHtml.length;
+      groupId = existingSnapshot.groupId || existingGroupId;
+    }
+  }
 
+  const totalTurns = existingTurnCount + turnElements.length;
+  const turnsToKeep = keepRounds * 2;
+  const totalTurnsToDetach = Math.max(0, totalTurns - turnsToKeep);
+  const additionalTurnsToDetach = Math.max(0, totalTurnsToDetach - existingTurnCount);
+  const turnElementsToDetach = turnElements.slice(0, additionalTurnsToDetach);
+  const firstKeptTurn = turnElements[additionalTurnsToDetach];
+  const nextHtml = existingHtml.concat(turnElementsToDetach.map(turnEl => turnEl.outerHTML));
+  const nextTurnCount = existingTurnCount + turnElementsToDetach.length;
+  const roundCount = Math.floor(nextTurnCount / 2);
+
+  if (additionalTurnsToDetach <= 0 && existingPlaceholder) {
+    setPlaceholderContent(existingPlaceholder, {
+      mode: CLEANUP_MODES.PERFORMANCE,
+      hiddenRounds: roundCount,
+      canExpand: !autoMaintainEnabled
+    });
+    existingPlaceholder.dataset.chcHiddenRounds = String(roundCount);
+    return roundCount;
+  }
+
+  for (let index = 0; index < nextHtml.length; index += 1) {
+    const turnSaveResponse = await sendRuntimeMessage({
+      action: 'saveCollapsedTurn',
+      groupId,
+      index,
+      html: nextHtml[index]
+    });
+
+    if (!turnSaveResponse?.success) {
+      throw new Error(turnSaveResponse?.message || `Unable to save local snapshot turn ${index}`);
+    }
+  }
+
+  const saveResponse = await sendRuntimeMessage({
+    action: 'saveCollapsedSnapshot',
+    groupId,
+    conversationId,
+    turnCount: nextTurnCount,
+    roundCount,
+    html: []
+  });
+
+  if (!saveResponse?.success) {
+    throw new Error(saveResponse?.message || 'Unable to save local snapshot');
+  }
+
+  if (existingPlaceholder) {
+    setPlaceholderContent(existingPlaceholder, {
+      mode: CLEANUP_MODES.PERFORMANCE,
+      hiddenRounds: roundCount,
+      canExpand: !autoMaintainEnabled
+    });
+    existingPlaceholder.dataset.chcHiddenRounds = String(roundCount);
+  } else {
+    insertPlaceholder(
+      turnElementsToDetach,
+      firstKeptTurn,
+      createPlaceholder({
+        mode: CLEANUP_MODES.PERFORMANCE,
+        groupId,
+        hiddenRounds: roundCount,
+        canExpand: !autoMaintainEnabled
+      })
+    );
+  }
+
+  turnElementsToDetach.forEach((turnEl) => turnEl.remove());
+
+  return roundCount;
+}
+
+function removeOldTurns(turnElements, turnsToRemove) {
+  removeExistingPlaceholders();
+  turnElements.forEach(showTurn);
+
+  const turnElementsToDelete = turnElements.slice(0, turnsToRemove);
+  const firstKeptTurn = turnElements[turnsToRemove];
+  const conversationId = getConversationId();
+  const groupId = makeGroupId(conversationId);
+  const removedRounds = Math.floor(turnElementsToDelete.length / 2);
+
+  insertPlaceholder(
+    turnElementsToDelete,
+    firstKeptTurn,
+    createPlaceholder({
+      mode: CLEANUP_MODES.REMOVE,
+      groupId,
+      hiddenRounds: removedRounds,
+      canExpand: false
+    })
+  );
+
+  turnElementsToDelete.forEach(turnEl => {
+    if (turnEl.parentNode) {
+      turnEl.remove();
+    }
+  });
+
+  return removedRounds;
+}
+
+async function limitOldRounds(keepRounds, cleanupMode) {
+  let turnElements = findTurnElements();
+
+  if (turnElements.length === 0) {
+    return {
+      success: false,
+      message: getMessage('errorNotFound')
+    };
+  }
+
+  const mode = Object.values(CLEANUP_MODES).includes(cleanupMode)
+    ? cleanupMode
+    : CLEANUP_MODES.SAFE;
+
+  const existingPerformancePlaceholder = getExistingPerformancePlaceholder();
+  if (mode !== CLEANUP_MODES.PERFORMANCE && existingPerformancePlaceholder) {
+    await expandPerformancePlaceholder(existingPerformancePlaceholder);
+    turnElements = findTurnElements();
+  }
+
+  const totalTurns = turnElements.length;
+  const turnsToKeep = keepRounds * 2;
+  const turnsToLimit = totalTurns - turnsToKeep;
+
+  if (turnsToLimit <= 0) {
+    const currentPerformancePlaceholder = getExistingPerformancePlaceholder();
+    if (mode === CLEANUP_MODES.PERFORMANCE && currentPerformancePlaceholder) {
+      const response = await sendRuntimeMessage({
+        action: 'getCollapsedSnapshot',
+        groupId: currentPerformancePlaceholder.dataset.chcGroupId
+      });
+      const hiddenRounds = response?.snapshot?.roundCount || 0;
+      return {
+        success: true,
+        message: getMessage('successPerformanceDetailed', [hiddenRounds.toString(), keepRounds.toString()]),
+        rounds: calculateRounds(turnElements)
+      };
+    }
+
+    turnElements.forEach(showTurn);
+    removeExistingPlaceholders();
+    const currentRounds = calculateRounds(turnElements);
     return {
       success: true,
-      message: getMessage('successCleanedDetailed', [removedRounds.toString(), remainingRounds.toString()]),
-      rounds: remainingRounds
+      message: getMessage('infoNoNeedClean', [currentRounds.toString()]),
+      rounds: currentRounds
     };
+  }
+
+  let limitedRounds;
+  if (mode === CLEANUP_MODES.PERFORMANCE) {
+    limitedRounds = await collapsePerformanceTurns(turnElements, keepRounds);
+  } else if (mode === CLEANUP_MODES.REMOVE) {
+    limitedRounds = removeOldTurns(turnElements, turnsToLimit);
+  } else {
+    limitedRounds = collapseSafeTurns(turnElements, turnsToLimit);
+  }
+
+  const remainingRounds = Math.floor(turnsToKeep / 2);
+  const messageKey = mode === CLEANUP_MODES.PERFORMANCE
+    ? 'successPerformanceDetailed'
+    : mode === CLEANUP_MODES.REMOVE
+      ? 'successCleanedDetailed'
+      : 'successCollapsedDetailed';
+
+  return {
+    success: true,
+    message: getMessage(messageKey, [limitedRounds.toString(), remainingRounds.toString()]),
+    rounds: remainingRounds
+  };
+}
+
+async function removeOldRounds(keepRounds, cleanupMode) {
+  try {
+    const result = await limitOldRounds(keepRounds, cleanupMode);
+    scheduleBadgeUpdate();
+    return result;
   } catch (error) {
-    console.error('清理历史对话时出错:', error);
+    console.error('Failed to limit old conversation rounds:', error);
     return {
       success: false,
       message: getMessage('errorCleanFailed') + error.message
@@ -86,27 +558,62 @@ function removeOldRounds(keepRounds) {
   }
 }
 
-// ========== 自动保持轮数功能 ==========
-
-let autoMaintainEnabled = false;
-let autoMaintainKeepRounds = 10;
-let observer = null;
-// 防抖：避免短时间内多次触发清理
-let cleanupTimer = null;
+function pauseAutoCleanup(durationMs) {
+  autoCleanupPausedUntil = Date.now() + durationMs;
+  if (cleanupTimer) {
+    clearTimeout(cleanupTimer);
+    cleanupTimer = null;
+  }
+}
 
 function scheduleAutoCleanup() {
+  if (Date.now() < autoCleanupPausedUntil) return;
   if (cleanupTimer) clearTimeout(cleanupTimer);
   cleanupTimer = setTimeout(() => {
     if (!autoMaintainEnabled) return;
+    if (Date.now() < autoCleanupPausedUntil) return;
     const turnElements = findTurnElements();
     const turnsToKeep = autoMaintainKeepRounds * 2;
     if (turnElements.length > turnsToKeep) {
-      const turnElementsToDelete = turnElements.slice(0, turnElements.length - turnsToKeep);
-      turnElementsToDelete.forEach(turnEl => {
-        if (turnEl.parentNode) turnEl.remove();
+      limitOldRounds(autoMaintainKeepRounds, cleanupModeEnabled).catch((error) => {
+        console.error('Auto-maintain failed:', error);
+      }).finally(() => {
+        scheduleBadgeUpdate();
       });
     }
   }, 500);
+}
+
+async function runAutoCleanupNow() {
+  if (!autoMaintainEnabled) {
+    scheduleBadgeUpdate();
+    return { success: true, stats: getRoundStats() };
+  }
+
+  const result = await limitOldRounds(autoMaintainKeepRounds, cleanupModeEnabled);
+  scheduleBadgeUpdate();
+  return {
+    success: result.success,
+    message: result.message,
+    stats: getRoundStats()
+  };
+}
+
+function isTurnRelatedNode(node) {
+  if (node.nodeType !== Node.ELEMENT_NODE) return false;
+  if (node.dataset?.chcPlaceholder === 'true') return false;
+
+  const isTurnSection =
+    node.matches?.('section[data-testid^="conversation-turn-"][data-turn-id]') ||
+    node.querySelector?.('section[data-testid^="conversation-turn-"][data-turn-id]');
+
+  return (
+    node.id === 'thread' ||
+    node.tagName === 'ARTICLE' ||
+    node.querySelector?.('#thread') ||
+    node.querySelector?.('article') ||
+    isTurnSection
+  );
 }
 
 function startObserver() {
@@ -116,23 +623,11 @@ function startObserver() {
 
   observer = new MutationObserver((mutations) => {
     if (!autoMaintainEnabled) return;
-    // 监听全局新增节点，兼容会话切换/新建会话导致的容器替换
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          const isTurnSection =
-            node.matches?.('section[data-testid^="conversation-turn-"][data-turn-id]') ||
-            node.querySelector?.('section[data-testid^="conversation-turn-"][data-turn-id]');
-          if (
-            node.id === 'thread' ||
-            node.tagName === 'ARTICLE' ||
-            node.querySelector?.('#thread') ||
-            node.querySelector?.('article') ||
-            isTurnSection
-          ) {
-            scheduleAutoCleanup();
-            return;
-          }
+        if (isTurnRelatedNode(node)) {
+          scheduleAutoCleanup();
+          return;
         }
       }
     }
@@ -152,31 +647,35 @@ function stopObserver() {
   }
 }
 
-function updateAutoMaintain(enabled, keepRounds) {
+function updateAutoMaintain(enabled, keepRounds, cleanupMode, runImmediately = false) {
+  const wasEnabled = autoMaintainEnabled;
   autoMaintainEnabled = enabled;
   autoMaintainKeepRounds = keepRounds;
+  cleanupModeEnabled = cleanupMode || CLEANUP_MODES.SAFE;
+  if (wasEnabled !== enabled) {
+    refreshPlaceholderInteractivity();
+  }
 
   if (enabled) {
     startObserver();
+    if (runImmediately) {
+      return runAutoCleanupNow();
+    }
     scheduleAutoCleanup();
   } else {
     stopObserver();
+    scheduleBadgeUpdate();
   }
+  return Promise.resolve({ success: true, stats: getRoundStats() });
 }
-
-// ========== Badge 专用持续观察者 ==========
-// 与 autoMaintain 无关，始终运行，实时反映当前轮数
 
 let badgeTimer = null;
 let domCheckTimer = null;
 
-// 采集 #thread 内部结构样本，用于诊断 DOM 变更
 function runDOMDiagnostic() {
-  const thread = document.querySelector('#thread');
+  const thread = findThread();
   if (!thread) return;
 
-  // 只有消息真正渲染后才会出现 data-message-author-role 或 data-turn-id。
-  // 若两者都不存在，说明页面仍在加载中，不触发警告（避免长对话慢加载导致误报）。
   const hasMessageContent =
     thread.querySelector('[data-message-author-role]') ||
     thread.querySelector('[data-turn-id]');
@@ -188,17 +687,17 @@ function runDOMDiagnostic() {
     .join(' | ') || '(no data-testid elements found)';
 
   console.error(`[ChatGPT History Cleaner] DOM structure may have changed.\nSample: ${sample}`);
-  chrome.runtime.sendMessage({ action: 'domWarning', sample });
+  sendRuntimeMessage({ action: 'domWarning', sample }).catch(() => {});
 }
 
 function scheduleDOMCheck() {
-  if (domCheckTimer) return; // 已有待执行的检查，不重复
+  if (domCheckTimer) return;
   domCheckTimer = setTimeout(() => {
     domCheckTimer = null;
-    if (findTurnElements().length > 0) return;        // turns 已出现，无需诊断
-    if (!location.pathname.includes('/c/')) return;   // 不在对话页
+    if (findTurnElements().length > 0) return;
+    if (!location.pathname.includes('/c/')) return;
     runDOMDiagnostic();
-  }, 10000); // 等待 10 秒，确保页面已充分渲染
+  }, 10000);
 }
 
 function cancelDOMCheck() {
@@ -211,30 +710,14 @@ function cancelDOMCheck() {
 function scheduleBadgeUpdate() {
   if (badgeTimer) clearTimeout(badgeTimer);
   badgeTimer = setTimeout(() => {
-    const turns = findTurnElements();
-    const count = Math.floor(turns.length / 2);
-    updateBadge(count);
-    // turns 存在 → 结构正常，取消待检查；turns 为 0 且在对话页 → 启动延迟检查
-    if (count > 0) {
+    const stats = getRoundStats();
+    updateBadge(stats);
+    if (stats.totalRounds > 0) {
       cancelDOMCheck();
     } else if (location.pathname.includes('/c/')) {
       scheduleDOMCheck();
     }
   }, 300);
-}
-
-function isTurnRelatedNode(node) {
-  if (node.nodeType !== Node.ELEMENT_NODE) return false;
-  const isTurnSection =
-    node.matches?.('section[data-testid^="conversation-turn-"][data-turn-id]') ||
-    node.querySelector?.('section[data-testid^="conversation-turn-"][data-turn-id]');
-  return (
-    node.id === 'thread' ||
-    node.tagName === 'ARTICLE' ||
-    node.querySelector?.('#thread') ||
-    node.querySelector?.('article') ||
-    isTurnSection
-  );
 }
 
 let badgeObserver = null;
@@ -259,87 +742,103 @@ function startBadgeObserver() {
   badgeObserver.observe(target, { childList: true, subtree: true });
 }
 
-// 页面加载时从存储中恢复自动保持设置
+function resolveCleanupMode(result) {
+  if (result.cleanupMode) {
+    return result.cleanupMode;
+  }
+  return result.collapseOldMessages === false ? CLEANUP_MODES.REMOVE : CLEANUP_MODES.SAFE;
+}
+
 async function initAutoMaintain() {
   try {
-    const result = await chrome.storage.local.get({ autoMaintain: false, keepRounds: 10 });
-    updateAutoMaintain(result.autoMaintain, result.keepRounds);
+    const result = await chrome.storage.local.get({
+      autoMaintain: false,
+      keepRounds: 10,
+      cleanupMode: CLEANUP_MODES.SAFE,
+      collapseOldMessages: true
+    });
+    updateAutoMaintain(result.autoMaintain, result.keepRounds, resolveCleanupMode(result));
     startBadgeObserver();
-    scheduleBadgeUpdate(); // 尝试立即更新（若 turns 已渲染）
+    scheduleBadgeUpdate();
   } catch (e) {
-    // storage 访问失败时忽略
+    // Ignore storage failures; manual popup actions can still retry later.
   }
 }
 
-// 监听存储变化（当用户在 popup 中改设置，但 popup 关闭后再打开新 tab 时也能同步）
 chrome.storage.onChanged.addListener((changes) => {
-  if (changes.autoMaintain || changes.keepRounds) {
+  if (changes.autoMaintain || changes.keepRounds || changes.cleanupMode || changes.collapseOldMessages) {
     const enabled = changes.autoMaintain
       ? changes.autoMaintain.newValue
       : autoMaintainEnabled;
     const rounds = changes.keepRounds
       ? changes.keepRounds.newValue
       : autoMaintainKeepRounds;
-    updateAutoMaintain(enabled, rounds);
+    const cleanupMode = changes.cleanupMode
+      ? changes.cleanupMode.newValue
+      : cleanupModeEnabled;
+    updateAutoMaintain(enabled, rounds, cleanupMode);
   }
 });
 
-// ========== 消息监听 ==========
-
-// 监听来自 popup 的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // 处理 ping 消息（用于检查 content script 是否已加载）
   if (request.action === 'ping') {
     sendResponse({ success: true, message: 'content script loaded' });
     return true;
   }
 
-  // 测试用：直接触发 DOM 警告（跳过所有条件判断）
   if (request.action === 'testDOMWarning') {
-    chrome.runtime.sendMessage({
+    sendRuntimeMessage({
       action: 'domWarning',
       sample: '[TEST] section[data-testid="conversation-turn-1"] | div[data-message-author-role="user"]'
     });
     sendResponse({ success: true });
     return true;
   }
-  
-  // 处理自动保持设置
+
   if (request.action === 'setAutoMaintain') {
-    updateAutoMaintain(request.autoMaintain, request.keepRounds);
-    sendResponse({ success: true });
+    updateAutoMaintain(request.autoMaintain, request.keepRounds, request.cleanupMode, true)
+      .then(sendResponse)
+      .catch((error) => {
+        console.error('Failed to apply auto-maintain settings:', error);
+        sendResponse({
+          success: false,
+          message: getMessage('errorOccurred') + error.message,
+          stats: getRoundStats()
+        });
+      });
     return true;
   }
 
-  // 处理其他消息
-  try {
-    if (request.action === 'removeOldRounds') {
-      const result = removeOldRounds(request.keepRounds);
-      sendResponse(result);
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-    sendResponse({ 
-      success: false, 
-      message: getMessage('errorOccurred') + error.message 
-    });
+  if (request.action === 'getRoundStats') {
+    sendResponse({ success: true, stats: getRoundStats() });
+    return true;
   }
-  
+
+  if (request.action === 'removeOldRounds') {
+    removeOldRounds(request.keepRounds, request.cleanupMode)
+      .then(sendResponse)
+      .catch((error) => {
+        console.error('Error handling message:', error);
+        sendResponse({
+          success: false,
+          message: getMessage('errorOccurred') + error.message
+        });
+      });
+    return true;
+  }
+
   return true;
 });
 
-// ========== 初始化 ==========
-
-// #thread 可能在 content script 加载后才出现，需要等待
 function waitForThreadAndInit() {
-  const thread = document.querySelector('#thread');
+  const thread = findThread();
   if (thread) {
     initAutoMaintain();
     return;
   }
-  // 用 MutationObserver 等待 #thread 出现
+
   const bodyObserver = new MutationObserver(() => {
-    if (document.querySelector('#thread')) {
+    if (findThread()) {
       bodyObserver.disconnect();
       initAutoMaintain();
     }

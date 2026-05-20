@@ -1,118 +1,72 @@
-# ChatGPT History Cleaner
+# ChatGPT History Cleaner & Performance Booster
 
-一个用于**在浏览器页面中裁剪 ChatGPT 对话显示内容**的 Edge / Chrome 浏览器扩展。  
-通过移除页面中较早的对话轮次，仅保留最近的 N 轮对话显示，从而降低页面复杂度、提升整体性能和响应速度。
+A lightweight Chrome and Edge extension for making long ChatGPT conversations smoother and easier to use.
 
-> 本扩展仅作用于浏览器页面显示，不会删除 ChatGPT 服务器端或账号中的任何数据。
+The extension keeps the latest N conversation rounds visible and can collapse older messages behind a small expandable placeholder. It only changes the current page display. It does not delete ChatGPT account data or upload conversation content.
 
-## 功能特性
+## Current Focus
 
-- ✂️ **裁剪对话显示**  
-  移除页面中较早的对话轮次，仅保留最近的 N 轮对话显示
+Long Conversation Experience:
 
-- 📊 **查看对话轮数**  
-  快速查看当前页面中显示的对话轮数
+- Keep recent conversation rounds visible
+- Choose Safe, Performance, or Remove mode for older messages
+- Reduce lag in long chats
+- Improve browser responsiveness
+- Stay local, lightweight, and privacy-first
 
-- ⚙️ **可配置保留轮数**  
-  自定义保留的对话轮数（1–100 轮）
+## Features
 
-- 🚀 **提升页面性能**  
-  当对话轮数较多时，通过裁剪显示内容显著提升页面滚动和交互流畅度
+- Configurable recent-round limit, defaulting to 10 rounds
+- Safe mode: hide older messages visually and expand instantly
+- Performance mode: save older message HTML snapshots to the extension's local IndexedDB, remove those nodes from the page DOM, and expand by restoring the snapshot
+- Remove mode: remove older page nodes without saving a snapshot; refresh the ChatGPT page to restore the full conversation
+- Options page for Performance mode snapshot TTL and manual cleanup
+- Optional auto-maintain mode for long sessions
+- Conversation round count badge
+- English and Simplified Chinese UI
 
-- 💾 **仅前端操作**  
-  所有操作均在浏览器本地完成，仅影响页面显示，不会影响服务器端或账号中的对话数据
+## Privacy
 
-- 🌐 **国际化支持**  
-  支持中文和英文界面，自动根据浏览器语言设置切换
+- No backend
+- No tracking
+- No analytics
+- No conversation upload
 
-## 安装方法
+All behavior runs locally in the browser page. Performance mode stores static snapshots locally in the extension's IndexedDB. They can be cleared from the Settings page and are automatically eligible for TTL cleanup.
 
-### 在 Edge 浏览器中安装
+## Installation
 
-1. 打开 Edge 浏览器，访问 `edge://extensions/`
-2. 开启右上角的「开发人员模式」
-3. 点击「加载解压缩的扩展」
-4. 选择本项目所在的文件夹
-5. 扩展安装完成
+### Chrome
 
-### 在 Chrome 浏览器中安装
+1. Open `chrome://extensions/`
+2. Enable Developer mode
+3. Click Load unpacked
+4. Select this project folder
 
-1. 打开 Chrome 浏览器，访问 `chrome://extensions/`
-2. 开启右上角的「开发者模式」
-3. 点击「加载已解压的扩展程序」
-4. 选择本项目所在的文件夹
-5. 扩展安装完成
+### Edge
 
-## 使用方法
+1. Open `edge://extensions/`
+2. Enable Developer mode
+3. Click Load unpacked
+4. Select this project folder
 
-1. 访问 [ChatGPT](https://chat.openai.com) 或 [chatgpt.com](https://chatgpt.com)
-2. 打开一个包含多轮对话的聊天页面
-3. 点击浏览器工具栏中的扩展图标
-4. 设置需要保留的对话轮数（默认 10 轮）
-5. 点击「裁剪旧对话」按钮
-6. 页面中较早的对话轮次将被移除，仅保留最近的 N 轮显示
+## Usage
 
+1. Open a ChatGPT conversation on `chatgpt.com` or `chat.openai.com`
+2. Click the extension icon
+3. Set how many recent rounds to keep visible
+4. Choose a mode:
+   - Safe: lowest risk, smaller visual surface
+   - Performance: real DOM reduction with local snapshots
+   - Remove: strongest page reduction, no in-page restore
+5. Click Optimize current conversation
 
-## 使用场景
+Safe and Performance mode show an expandable placeholder for older messages. Remove mode leaves a non-expandable placeholder. Refreshing the page asks ChatGPT to render the full conversation again.
 
-当对话轮数较多（例如 50+ 轮）时，ChatGPT 网页可能会变得缓慢，甚至出现滚动或交互卡顿的情况。  
-使用本扩展可以：
+## Roadmap Principle
 
-- 裁剪页面中较早的对话内容，仅保留最近的对话轮次
-- 明显提升页面滚动、输入和交互的流畅度
-- 不影响服务器端或账号中的历史对话数据  
-- 刷新页面后，完整对话内容将自动恢复显示
+New features must answer yes to:
 
+Does this improve long conversation experience?
 
-## 文件结构
-
-```
-ChatGPTHistoryCleaner/
-├── manifest.json       # 扩展配置文件
-├── popup.html          # 扩展弹窗界面
-├── popup.css           # 弹窗样式
-├── popup.js            # 弹窗逻辑
-├── content.js          # 内容脚本（在 ChatGPT 页面中运行）
-├── background.js       # 后台服务脚本
-├── icons/              # 图标文件夹
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
-├── _locales/           # 国际化语言文件
-│   ├── en/             # 英文
-│   │   └── messages.json
-│   └── zh_CN/          # 中文
-│       └── messages.json
-└── README.md           # 说明文档
-```
-
-## 注意事项
-
-- 裁剪操作仅影响当前页面的显示内容，刷新页面即可恢复完整对话
-- 扩展需要访问 ChatGPT 网站页面的权限才能正常工作
-- 如果 ChatGPT 页面结构发生较大变化，可能需要更新对应的选择器逻辑
-
-## 隐私说明
-
-本扩展不收集、不存储、不上传任何用户数据。  
-所有功能均在本地浏览器页面中完成，不会与任何外部服务器通信。
-
-## 国际化
-
-本扩展支持多语言界面，目前支持：
-- 🇨🇳 中文（简体）
-- 🇺🇸 English
-
-扩展会根据浏览器的语言设置自动选择界面语言。默认语言为中文。
-
-如需添加其他语言支持，可以在 `_locales` 目录下添加对应的语言文件夹和 `messages.json` 文件。
-
-## 开发说明
-
-本项目基于 Manifest V3 开发，兼容 Chrome 和 Edge 浏览器。
-
-使用 Chrome Extension i18n API 实现国际化支持。
-
-## 许可证
-
-MIT License
+Features outside that scope should not enter the main extension.

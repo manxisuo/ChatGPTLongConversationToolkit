@@ -1,31 +1,27 @@
-// 获取翻译消息（使用 Chrome i18n API，会根据浏览器语言自动选择）
+const CLEANUP_MODES = {
+  SAFE: 'safe',
+  PERFORMANCE: 'performance',
+  REMOVE: 'remove'
+};
+
 function getMessage(key, substitutions = []) {
   return chrome.i18n.getMessage(key, substitutions);
 }
 
-// 初始化 i18n
 function initI18n() {
-  // 更新界面文本
   const elements = document.querySelectorAll('[data-i18n]');
   elements.forEach(element => {
     const key = element.getAttribute('data-i18n');
     const message = getMessage(key);
     if (message) {
-      if (element.tagName === 'INPUT' && element.type === 'button') {
-        element.value = message;
-      } else {
-        element.textContent = message;
-      }
+      element.textContent = message;
     }
   });
-  // 更新 title
   document.title = getMessage('title');
 }
 
-// 页面加载时初始化 i18n
 initI18n();
 
-// 显示状态消息；persistent=true 时不自动消失（用于严重警告）
 function showStatus(message, type = 'info', persistent = false) {
   const statusEl = document.getElementById('status');
   statusEl.textContent = message;
@@ -37,155 +33,228 @@ function showStatus(message, type = 'info', persistent = false) {
   }
 }
 
-// 获取当前活动标签页
 async function getCurrentTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
 }
 
-// 加载保存的设置
+function getSelectedMode() {
+  return document.querySelector('input[name="cleanupMode"]:checked')?.value || CLEANUP_MODES.SAFE;
+}
+
+function setSelectedMode(cleanupMode) {
+  const mode = Object.values(CLEANUP_MODES).includes(cleanupMode)
+    ? cleanupMode
+    : CLEANUP_MODES.SAFE;
+  const input = document.querySelector(`input[name="cleanupMode"][value="${mode}"]`);
+  if (input) {
+    input.checked = true;
+  }
+}
+
+function readSettingsFromForm() {
+  return {
+    keepRounds: parseInt(document.getElementById('keepRounds').value, 10),
+    autoMaintain: document.getElementById('autoMaintain').checked,
+    cleanupMode: getSelectedMode()
+  };
+}
+
+function resolveCleanupMode(result) {
+  if (result.cleanupMode) {
+    return result.cleanupMode;
+  }
+  return result.collapseOldMessages === false ? CLEANUP_MODES.REMOVE : CLEANUP_MODES.SAFE;
+}
+
 async function loadSettings() {
-  const result = await chrome.storage.local.get({ keepRounds: 10, autoMaintain: false });
+  const result = await chrome.storage.local.get({
+    keepRounds: 10,
+    autoMaintain: false,
+    cleanupMode: CLEANUP_MODES.SAFE,
+    collapseOldMessages: true
+  });
   document.getElementById('keepRounds').value = result.keepRounds;
   document.getElementById('autoMaintain').checked = result.autoMaintain;
+  setSelectedMode(resolveCleanupMode(result));
 }
 
-// 保存设置
 async function saveSettings() {
-  const keepRounds = parseInt(document.getElementById('keepRounds').value);
-  if (keepRounds < 1 || keepRounds > 100) {
+  const settings = readSettingsFromForm();
+  if (settings.keepRounds < 1 || settings.keepRounds > 100 || Number.isNaN(settings.keepRounds)) {
     showStatus(getMessage('errorKeepRoundsRange'), 'error');
-    return false;
+    return null;
   }
-  const autoMaintain = document.getElementById('autoMaintain').checked;
-  await chrome.storage.local.set({ keepRounds, autoMaintain });
-  return true;
+
+  await chrome.storage.local.set({
+    keepRounds: settings.keepRounds,
+    autoMaintain: settings.autoMaintain,
+    cleanupMode: settings.cleanupMode,
+    collapseOldMessages: settings.cleanupMode !== CLEANUP_MODES.REMOVE
+  });
+  return settings;
 }
 
-// 通知所有 ChatGPT 标签页更新自动保持设置
-async function notifyAutoMaintainChange() {
-  const keepRounds = parseInt(document.getElementById('keepRounds').value);
-  const autoMaintain = document.getElementById('autoMaintain').checked;
+async function notifyAutoMaintainChange(settings = readSettingsFromForm()) {
   const tabs = await chrome.tabs.query({
     url: ['https://chat.openai.com/*', 'https://chatgpt.com/*']
   });
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
   for (const tab of tabs) {
     try {
-      chrome.tabs.sendMessage(tab.id, {
+      const response = await chrome.tabs.sendMessage(tab.id, {
         action: 'setAutoMaintain',
-        autoMaintain,
-        keepRounds
+        autoMaintain: settings.autoMaintain,
+        keepRounds: settings.keepRounds,
+        cleanupMode: settings.cleanupMode
       });
+      if (tab.id === activeTab?.id && response?.stats) {
+        setCurrentRoundsDisplay(response.stats);
+      }
     } catch (e) {
-      // tab 可能没有 content script
+      // The tab may not have loaded the content script yet.
     }
   }
 }
 
-// 页面加载时恢复设置
 loadSettings();
 
-// 从 badge 读取当前轮数并显示在 popup 内；若 badge 为 ! 则直接显示持久警告
 async function loadCurrentRounds() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) return;
+    if (tab.url?.includes('chat.openai.com') || tab.url?.includes('chatgpt.com')) {
+      try {
+        const response = await chrome.tabs.sendMessage(tab.id, { action: 'getRoundStats' });
+        if (response?.success && response.stats) {
+          setCurrentRoundsDisplay(response.stats);
+          return;
+        }
+      } catch (e) {
+        // Fall back to badge text below.
+      }
+    }
+
     const text = await chrome.action.getBadgeText({ tabId: tab.id });
     if (text === '!') {
       showStatus(getMessage('domWarningMessage'), 'error', true);
     } else {
-      setCurrentRoundsDisplay(text);
+      setCurrentRoundsDisplay(text ? { visibleRounds: Number(text), totalRounds: Number(text) } : null);
     }
   } catch (e) {
-    // 非 ChatGPT 页面或 badge 为空时忽略
+    // Ignore non-ChatGPT pages or empty badges.
   }
 }
 
-function setCurrentRoundsDisplay(text) {
+function setCurrentRoundsDisplay(stats) {
   const el = document.getElementById('currentRounds');
   if (!el) return;
-  if (text) {
-    el.textContent = text + ' ' + chrome.i18n.getMessage('roundsUnit');
+  if (stats?.visibleRounds > 0 || stats?.totalRounds > 0) {
+    el.textContent = getMessage('roundStatsBadge', [
+      String(stats.visibleRounds || 0),
+      String(stats.totalRounds || stats.visibleRounds || 0)
+    ]);
   } else {
     el.textContent = '';
   }
 }
+
 loadCurrentRounds();
 
-// 输入框改变时保存并通知
+async function saveAndNotifyIfNeeded(showModeStatus = false) {
+  const settings = await saveSettings();
+  if (!settings) return null;
+
+  await notifyAutoMaintainChange(settings);
+
+  if (showModeStatus) {
+    const statusKey = settings.cleanupMode === CLEANUP_MODES.PERFORMANCE
+      ? 'performanceModeSelected'
+      : settings.cleanupMode === CLEANUP_MODES.REMOVE
+        ? 'removeModeSelected'
+        : 'safeModeSelected';
+    showStatus(getMessage(statusKey), 'info');
+  }
+
+  return settings;
+}
+
 document.getElementById('keepRounds').addEventListener('change', async () => {
-  if (await saveSettings()) {
-    const autoMaintain = document.getElementById('autoMaintain').checked;
-    if (autoMaintain) {
-      await notifyAutoMaintainChange();
-    }
+  const settings = await saveSettings();
+  if (settings?.autoMaintain) {
+    await notifyAutoMaintainChange(settings);
+    await loadCurrentRounds();
   }
 });
 
-// 复选框改变时保存并通知
+document.querySelectorAll('input[name="cleanupMode"]').forEach((input) => {
+  input.addEventListener('change', () => {
+    saveAndNotifyIfNeeded(true);
+  });
+});
+
 document.getElementById('autoMaintain').addEventListener('change', async () => {
-  if (await saveSettings()) {
-    const autoMaintain = document.getElementById('autoMaintain').checked;
-    await notifyAutoMaintainChange();
-    if (autoMaintain) {
-      const keepRounds = parseInt(document.getElementById('keepRounds').value);
-      showStatus(getMessage('autoMaintainEnabled', [keepRounds.toString()]), 'success');
+  const settings = await saveAndNotifyIfNeeded();
+  if (settings) {
+    if (settings.autoMaintain) {
+      showStatus(getMessage('autoMaintainEnabled', [settings.keepRounds.toString()]), 'success');
     } else {
       showStatus(getMessage('autoMaintainDisabled'), 'info');
     }
   }
 });
 
-// 检查 content script 是否已加载
+document.getElementById('openOptions').addEventListener('click', () => {
+  chrome.runtime.openOptionsPage();
+});
+
 async function checkContentScript(tabId) {
   try {
-    // 尝试发送一个测试消息
     await chrome.tabs.sendMessage(tabId, { action: 'ping' });
     return true;
   } catch (error) {
-    // Content script 未加载，需要用户刷新页面
     return false;
   }
 }
 
-// 清理历史对话
 document.getElementById('removeOldRounds').addEventListener('click', async () => {
   try {
     const tab = await getCurrentTab();
-    
-    // 检查是否在 ChatGPT 页面
+
     if (!tab.url.includes('chat.openai.com') && !tab.url.includes('chatgpt.com')) {
       showStatus(getMessage('errorNotChatGPT'), 'error');
       return;
     }
 
-    // 检查 content script 是否已加载
     const scriptReady = await checkContentScript(tab.id);
     if (!scriptReady) {
       showStatus(getMessage('errorScriptLoad') + ' Please refresh the ChatGPT page and try again.', 'error');
       return;
     }
 
-    // 保存设置
-    if (!(await saveSettings())) {
+    const settings = await saveSettings();
+    if (!settings) {
       return;
     }
 
-    const keepRounds = parseInt(document.getElementById('keepRounds').value);
-
-    // 向 content script 发送消息
-    chrome.tabs.sendMessage(tab.id, { 
-      action: 'removeOldRounds', 
-      keepRounds
+    chrome.tabs.sendMessage(tab.id, {
+      action: 'removeOldRounds',
+      keepRounds: settings.keepRounds,
+      cleanupMode: settings.cleanupMode
     }, (response) => {
       if (chrome.runtime.lastError) {
         showStatus(getMessage('errorOperationFailed'), 'error');
-        console.error('发送消息失败:', chrome.runtime.lastError);
+        console.error('Failed to send message:', chrome.runtime.lastError);
         return;
       }
+
       if (response) {
         if (response.success) {
-          showStatus(response.message || getMessage('successCleaned', [keepRounds.toString()]), 'success');
+          showStatus(
+            response.message || getMessage('successCleaned', [settings.keepRounds.toString()]),
+            'success'
+          );
         } else {
           showStatus(response.message || getMessage('errorOperationFailedRetry'), 'error');
         }
@@ -195,16 +264,18 @@ document.getElementById('removeOldRounds').addEventListener('click', async () =>
     });
   } catch (error) {
     showStatus(getMessage('errorOccurred') + error.message, 'error');
-    console.error('清理历史对话错误:', error);
+    console.error('Failed to limit old conversation rounds:', error);
   }
 });
 
-// 监听 background 广播的消息
 chrome.runtime.onMessage.addListener((message) => {
   if (message.action === 'badgeUpdated') {
     getCurrentTab().then(tab => {
       if (tab?.id === message.tabId) {
-        setCurrentRoundsDisplay(message.rounds > 0 ? String(message.rounds) : '');
+        setCurrentRoundsDisplay(message.stats || {
+          visibleRounds: message.rounds || 0,
+          totalRounds: message.totalRounds || message.rounds || 0
+        });
       }
     }).catch(() => {});
   }
@@ -217,4 +288,3 @@ chrome.runtime.onMessage.addListener((message) => {
     }).catch(() => {});
   }
 });
-

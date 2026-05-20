@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>__MSG_optionsTitle__</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <h1 data-i18n="optionsTitle">Settings</h1>
+      <p data-i18n="optionsSubtitle">Manage local Performance mode snapshots.</p>
+    </header>
+
+    <section class="panel">
+      <h2 data-i18n="snapshotStorageTitle">Local snapshots</h2>
+      <p class="muted" data-i18n="snapshotStorageDesc">
+        Performance mode stores hidden messages locally in this browser only.
+      </p>
+
+      <div class="field-row">
+        <label for="snapshotTtlDays" data-i18n="snapshotTtlLabel">Keep snapshots for</label>
+        <input id="snapshotTtlDays" type="number" min="1" max="365" value="30">
+        <span data-i18n="daysUnit">days</span>
+      </div>
+
+      <div class="stats" id="snapshotStats"></div>
+
+      <div class="actions">
+        <button id="saveOptions" class="btn primary" data-i18n="saveSettingsButton">Save settings</button>
+        <button id="cleanupExpired" class="btn secondary" data-i18n="cleanupExpiredButton">Clean expired snapshots</button>
+        <button id="clearSnapshots" class="btn danger" data-i18n="clearSnapshotsButton">Clear local snapshots</button>
+      </div>
+
+      <div id="status" class="status"></div>
+    </section>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

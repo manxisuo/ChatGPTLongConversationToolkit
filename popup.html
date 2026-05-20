@@ -7,31 +7,67 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1 data-i18n="title">ChatGPT History Cleaner</h1>
-      <span id="currentRounds" class="current-rounds-badge"></span>
-    </div>
-    <div class="settings-section">
-      <div class="rounds-row">
-        <label for="keepRounds" data-i18n="keepRoundsLabel">保留最近：</label>
-        <input type="number" id="keepRounds" min="1" max="100" value="10" />
-        <span class="input-hint" data-i18n="roundsUnit">轮</span>
+  <main class="container">
+    <header class="header">
+      <div>
+        <h1 data-i18n="title">ChatGPT Cleaner & Booster</h1>
+        <p data-i18n="subtitle">Long conversation control</p>
       </div>
-      <div class="checkbox-group">
-        <label class="checkbox-label">
-          <input type="checkbox" id="autoMaintain" />
-          <span class="checkbox-text" data-i18n="autoMaintainLabel">自动保持轮数上限</span>
+      <span id="currentRounds" class="current-rounds-badge"></span>
+    </header>
+
+    <section class="settings-section">
+      <div class="section-label" data-i18n="modeSectionTitle">Mode</div>
+
+      <div class="mode-list" role="radiogroup" aria-label="Cleanup mode">
+        <label class="mode-card">
+          <input type="radio" name="cleanupMode" value="safe" />
+          <span class="mode-content">
+            <span class="mode-title" data-i18n="safeModeTitle">Safe</span>
+            <span class="mode-desc" data-i18n="safeModeDesc">Hide old messages visually. Fast to restore, lowest risk.</span>
+          </span>
+        </label>
+
+        <label class="mode-card">
+          <input type="radio" name="cleanupMode" value="performance" />
+          <span class="mode-content">
+            <span class="mode-title" data-i18n="performanceModeTitle">Performance</span>
+            <span class="mode-desc" data-i18n="performanceModeDesc">Store old messages locally, remove them from DOM, expandable.</span>
+          </span>
+        </label>
+
+        <label class="mode-card">
+          <input type="radio" name="cleanupMode" value="remove" />
+          <span class="mode-content">
+            <span class="mode-title" data-i18n="removeModeTitle">Remove</span>
+            <span class="mode-desc" data-i18n="removeModeDesc">Remove old page nodes. Best reduction, restore by refresh.</span>
+          </span>
         </label>
       </div>
-    </div>
-    <div class="button-group">
-      <button id="removeOldRounds" class="btn btn-primary" data-i18n="cleanButton">
-        🧹 清理历史对话
-      </button>
-    </div>
+    </section>
+
+    <section class="settings-section compact">
+      <div class="rounds-row">
+        <label for="keepRounds" data-i18n="keepRoundsLabel">Keep only recent:</label>
+        <input type="number" id="keepRounds" min="1" max="100" value="10" />
+        <span class="input-hint" data-i18n="roundsUnit">rounds</span>
+      </div>
+
+      <label class="checkbox-label">
+        <input type="checkbox" id="autoMaintain" />
+        <span class="checkbox-text" data-i18n="autoMaintainLabel">Auto-maintain while chatting</span>
+      </label>
+    </section>
+
+    <button id="removeOldRounds" class="btn btn-primary" data-i18n="cleanButton">
+      Optimize current conversation
+    </button>
+    <button id="openOptions" class="btn btn-secondary" data-i18n="openSettingsButton">
+      Settings
+    </button>
+
     <div id="status" class="status"></div>
-  </div>
+  </main>
   <script src="popup.js"></script>
 </body>
 </html>

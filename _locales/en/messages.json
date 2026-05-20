@@ -1,27 +1,89 @@
 {
   "extensionName": {
-    "message": "ChatGPT History Cleaner",
+    "message": "ChatGPT History Cleaner & Performance Booster",
     "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "Limit visible ChatGPT messages to the most recent N to improve performance without affecting data or context.",
+    "message": "Speed up ChatGPT and improve long conversation experience.",
     "description": "Extension description"
   },
   "title": {
-    "message": "ChatGPT History Cleaner",
+    "message": "ChatGPT Cleaner & Booster",
     "description": "Popup title"
   },
+  "subtitle": {
+    "message": "Long conversation control",
+    "description": "Popup subtitle"
+  },
+  "modeSectionTitle": {
+    "message": "Mode",
+    "description": "Cleanup mode section title"
+  },
+  "safeModeTitle": {
+    "message": "Safe",
+    "description": "Safe mode title"
+  },
+  "safeModeDesc": {
+    "message": "Hide old messages visually. Fast to restore, lowest risk.",
+    "description": "Safe mode description"
+  },
+  "performanceModeTitle": {
+    "message": "Performance",
+    "description": "Performance mode title"
+  },
+  "performanceModeDesc": {
+    "message": "Store old messages locally, remove them from DOM, expandable.",
+    "description": "Performance mode description"
+  },
+  "removeModeTitle": {
+    "message": "Remove",
+    "description": "Remove mode title"
+  },
+  "removeModeDesc": {
+    "message": "Remove old page nodes. Best reduction, restore by refresh.",
+    "description": "Remove mode description"
+  },
+  "safeModeSelected": {
+    "message": "Safe mode selected: old messages stay in the page and are hidden visually.",
+    "description": "Safe mode selected status"
+  },
+  "performanceModeSelected": {
+    "message": "Performance mode selected: old messages are saved locally and removed from the DOM.",
+    "description": "Performance mode selected status"
+  },
+  "removeModeSelected": {
+    "message": "Remove mode selected: old messages are removed from the current page display.",
+    "description": "Remove mode selected status"
+  },
   "keepRoundsLabel": {
-    "message": "Keep recent:",
+    "message": "Keep only recent:",
     "description": "Label for keep rounds input"
   },
   "roundsUnit": {
     "message": "rounds",
     "description": "Unit for rounds input"
   },
+  "roundStatsBadge": {
+    "message": "Visible $VISIBLE$ / Total $TOTAL$ rounds",
+    "description": "Popup badge showing visible and total rounds",
+    "placeholders": {
+      "VISIBLE": {
+        "content": "$1",
+        "example": "10"
+      },
+      "TOTAL": {
+        "content": "$2",
+        "example": "27"
+      }
+    }
+  },
   "cleanButton": {
-    "message": "🧹 Clean History",
+    "message": "Optimize current conversation",
     "description": "Clean history button text"
+  },
+  "openSettingsButton": {
+    "message": "Settings",
+    "description": "Button to open extension settings"
   },
   "errorKeepRoundsRange": {
     "message": "Keep rounds must be between 1-100",
@@ -40,7 +102,7 @@
     "description": "Error message for failed operation"
   },
   "successCleaned": {
-    "message": "Cleaned history, kept the last $ROUNDS$ rounds",
+    "message": "Kept the last $ROUNDS$ rounds",
     "description": "Success message after cleaning",
     "placeholders": {
       "ROUNDS": {
@@ -62,7 +124,7 @@
     "description": "Error message when no messages found"
   },
   "infoNoNeedClean": {
-    "message": "Current conversation has only $ROUNDS$ rounds, no need to clean",
+    "message": "Current conversation has only $ROUNDS$ rounds, no need to optimize",
     "description": "Info message when no need to clean",
     "placeholders": {
       "ROUNDS": {
@@ -72,7 +134,7 @@
     }
   },
   "successCleanedDetailed": {
-    "message": "Cleaned $REMOVED$ rounds of history, kept the last $KEPT$ rounds",
+    "message": "Removed $REMOVED$ old rounds, kept the last $KEPT$ rounds",
     "description": "Success message with detailed cleaning info",
     "placeholders": {
       "REMOVED": {
@@ -85,12 +147,40 @@
       }
     }
   },
+  "successCollapsedDetailed": {
+    "message": "Hidden $HIDDEN$ old rounds, kept the latest $KEPT$ rounds visible",
+    "description": "Success message with detailed safe collapse info",
+    "placeholders": {
+      "HIDDEN": {
+        "content": "$1",
+        "example": "42"
+      },
+      "KEPT": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "successPerformanceDetailed": {
+    "message": "Moved $HIDDEN$ old rounds out of the DOM, kept the latest $KEPT$ rounds visible",
+    "description": "Success message with detailed performance collapse info",
+    "placeholders": {
+      "HIDDEN": {
+        "content": "$1",
+        "example": "42"
+      },
+      "KEPT": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
   "errorCleanFailed": {
-    "message": "Clean failed: ",
+    "message": "Optimization failed: ",
     "description": "Error message prefix for clean failure"
   },
   "autoMaintainLabel": {
-    "message": "Auto-maintain",
+    "message": "Auto-maintain while chatting",
     "description": "Label for auto-maintain checkbox"
   },
   "autoMaintainEnabled": {
@@ -107,23 +197,140 @@
     "message": "Auto-maintain disabled",
     "description": "Status message when auto-maintain is disabled"
   },
-  "domWarningTitle": {
-    "message": "ChatGPT page structure may have changed — extension cannot detect conversations",
-    "description": "Icon tooltip when DOM structure change is detected"
-  },
-  "domWarningMessage": {
-    "message": "⚠ ChatGPT page structure may have changed. Extension is temporarily unable to work. Please contact the developer.",
-    "description": "Warning shown in popup when DOM structure change is detected"
-  },
-  "badgeTitle": {
-    "message": "Current conversation: $ROUNDS$ rounds",
-    "description": "Tooltip for the extension icon badge",
+  "hiddenOlderMessages": {
+    "message": "Hidden older messages ($ROUNDS$ rounds)",
+    "description": "Placeholder shown where old messages were hidden",
     "placeholders": {
       "ROUNDS": {
         "content": "$1",
-        "example": "12"
+        "example": "42"
       }
     }
+  },
+  "performanceHiddenOlderMessages": {
+    "message": "Older messages stored locally and removed from DOM ($ROUNDS$ rounds)",
+    "description": "Placeholder shown where old messages were detached",
+    "placeholders": {
+      "ROUNDS": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "removedOlderMessages": {
+    "message": "Older messages removed from this page ($ROUNDS$ rounds)",
+    "description": "Placeholder shown where old messages were removed",
+    "placeholders": {
+      "ROUNDS": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "expandHiddenMessages": {
+    "message": "Expand",
+    "description": "Expand hidden messages action"
+  },
+  "turnOffAutoMaintainToExpand": {
+    "message": "Turn off auto-maintain to expand.",
+    "description": "Hint shown when auto-maintain disables placeholder expansion"
+  },
+  "snapshotRestoreFailed": {
+    "message": "Unable to restore saved messages. Refresh the page to reload the full conversation.",
+    "description": "Performance mode snapshot restore failure"
+  },
+  "domWarningTitle": {
+    "message": "ChatGPT page structure may have changed - extension cannot detect conversations",
+    "description": "Icon tooltip when DOM structure change is detected"
+  },
+  "domWarningMessage": {
+    "message": "ChatGPT page structure may have changed. Extension is temporarily unable to work. Please contact the developer.",
+    "description": "Warning shown in popup when DOM structure change is detected"
+  },
+  "badgeTitle": {
+    "message": "Current conversation: $VISIBLE$ visible / $TOTAL$ total rounds",
+    "description": "Tooltip for the extension icon badge",
+    "placeholders": {
+      "VISIBLE": {
+        "content": "$1",
+        "example": "10"
+      },
+      "TOTAL": {
+        "content": "$2",
+        "example": "27"
+      }
+    }
+  },
+  "optionsTitle": {
+    "message": "Settings",
+    "description": "Options page title"
+  },
+  "optionsSubtitle": {
+    "message": "Manage local Performance mode snapshots.",
+    "description": "Options page subtitle"
+  },
+  "snapshotStorageTitle": {
+    "message": "Local snapshots",
+    "description": "Snapshot storage section title"
+  },
+  "snapshotStorageDesc": {
+    "message": "Performance mode stores hidden messages locally in this browser only. These snapshots never leave your device.",
+    "description": "Snapshot storage description"
+  },
+  "snapshotTtlLabel": {
+    "message": "Keep snapshots for",
+    "description": "TTL setting label"
+  },
+  "daysUnit": {
+    "message": "days",
+    "description": "Days unit"
+  },
+  "saveSettingsButton": {
+    "message": "Save settings",
+    "description": "Save settings button"
+  },
+  "cleanupExpiredButton": {
+    "message": "Clean expired snapshots",
+    "description": "Cleanup expired snapshots button"
+  },
+  "clearSnapshotsButton": {
+    "message": "Clear local snapshots",
+    "description": "Clear snapshots button"
+  },
+  "snapshotStatsText": {
+    "message": "Saved groups: $GROUPS$ | Saved rounds: $ROUNDS$ | Saved turns: $TURNS$",
+    "description": "Snapshot storage stats",
+    "placeholders": {
+      "GROUPS": { "content": "$1", "example": "2" },
+      "ROUNDS": { "content": "$2", "example": "18" },
+      "TURNS": { "content": "$3", "example": "36" }
+    }
+  },
+  "snapshotTtlRangeError": {
+    "message": "Snapshot retention must be between 1 and 365 days.",
+    "description": "TTL validation error"
+  },
+  "settingsSaved": {
+    "message": "Settings saved.",
+    "description": "Settings saved status"
+  },
+  "expiredSnapshotsCleaned": {
+    "message": "Cleaned $COUNT$ expired snapshot groups.",
+    "description": "Expired cleanup status",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "3" }
+    }
+  },
+  "clearSnapshotsConfirm": {
+    "message": "Clear all local Performance mode snapshots? This cannot be undone.",
+    "description": "Confirm clear snapshots"
+  },
+  "snapshotsCleared": {
+    "message": "Local snapshots cleared.",
+    "description": "Snapshots cleared status"
+  },
+  "operationFailed": {
+    "message": "Operation failed.",
+    "description": "Generic failure message"
   }
 }
-
