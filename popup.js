@@ -158,6 +158,21 @@ function setCurrentRoundsDisplay(stats) {
   } else {
     el.textContent = '';
   }
+  updatePerformanceMetrics(stats);
+}
+
+function updatePerformanceMetrics(stats) {
+  const optimizedEl = document.getElementById('optimizedRounds');
+  const reductionEl = document.getElementById('domReduction');
+  if (!optimizedEl || !reductionEl) return;
+
+  const visible = stats?.visibleRounds || 0;
+  const total = stats?.totalRounds || visible;
+  const optimized = Math.max(0, total - visible);
+  const reduction = total > 0 ? Math.round((optimized / total) * 100) : 0;
+
+  optimizedEl.textContent = getMessage('optimizedRoundsValue', [String(optimized)]);
+  reductionEl.textContent = `${reduction}%`;
 }
 
 loadCurrentRounds();

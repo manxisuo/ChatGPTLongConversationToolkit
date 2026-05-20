@@ -23,7 +23,7 @@
         <label class="mode-card">
           <input type="radio" name="cleanupMode" value="safe" />
           <span class="mode-content">
-            <span class="mode-title" data-i18n="safeModeTitle">Safe</span>
+            <span class="mode-title" data-i18n="safeModeTitle">Safe Mode</span>
             <span class="mode-desc" data-i18n="safeModeDesc">Hide old messages visually. Fast to restore, lowest risk.</span>
           </span>
         </label>
@@ -31,7 +31,7 @@
         <label class="mode-card">
           <input type="radio" name="cleanupMode" value="performance" />
           <span class="mode-content">
-            <span class="mode-title" data-i18n="performanceModeTitle">Performance</span>
+            <span class="mode-title" data-i18n="performanceModeTitle">Performance Mode</span>
             <span class="mode-desc" data-i18n="performanceModeDesc">Store old messages locally, remove them from DOM, expandable.</span>
           </span>
         </label>
@@ -39,8 +39,8 @@
         <label class="mode-card">
           <input type="radio" name="cleanupMode" value="remove" />
           <span class="mode-content">
-            <span class="mode-title" data-i18n="removeModeTitle">Remove</span>
-            <span class="mode-desc" data-i18n="removeModeDesc">Remove old page nodes. Best reduction, restore by refresh.</span>
+            <span class="mode-title" data-i18n="removeModeTitle">Maximum Performance</span>
+            <span class="mode-desc" data-i18n="removeModeDesc">Discard old page nodes for the strongest reduction. Restore by refresh.</span>
           </span>
         </label>
       </div>
@@ -57,6 +57,17 @@
         <input type="checkbox" id="autoMaintain" />
         <span class="checkbox-text" data-i18n="autoMaintainLabel">Auto-maintain while chatting</span>
       </label>
+    </section>
+
+    <section class="metrics-section" aria-live="polite">
+      <div class="metric">
+        <span class="metric-label" data-i18n="optimizedRoundsLabel">Optimized</span>
+        <strong id="optimizedRounds">0</strong>
+      </div>
+      <div class="metric">
+        <span class="metric-label" data-i18n="domReductionLabel">Page weight reduced</span>
+        <strong id="domReduction">0%</strong>
+      </div>
     </section>
 
     <button id="removeOldRounds" class="btn btn-primary" data-i18n="cleanButton">

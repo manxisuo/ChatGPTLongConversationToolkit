@@ -12,7 +12,7 @@
     "description": "Popup title"
   },
   "subtitle": {
-    "message": "Long conversation control",
+    "message": "Long conversation optimizer",
     "description": "Popup subtitle"
   },
   "modeSectionTitle": {
@@ -20,7 +20,7 @@
     "description": "Cleanup mode section title"
   },
   "safeModeTitle": {
-    "message": "Safe",
+    "message": "Safe Mode",
     "description": "Safe mode title"
   },
   "safeModeDesc": {
@@ -28,7 +28,7 @@
     "description": "Safe mode description"
   },
   "performanceModeTitle": {
-    "message": "Performance",
+    "message": "Performance Mode",
     "description": "Performance mode title"
   },
   "performanceModeDesc": {
@@ -36,11 +36,11 @@
     "description": "Performance mode description"
   },
   "removeModeTitle": {
-    "message": "Remove",
+    "message": "Maximum Performance",
     "description": "Remove mode title"
   },
   "removeModeDesc": {
-    "message": "Remove old page nodes. Best reduction, restore by refresh.",
+    "message": "Discard old page nodes for the strongest reduction. Restore by refresh.",
     "description": "Remove mode description"
   },
   "safeModeSelected": {
@@ -52,7 +52,7 @@
     "description": "Performance mode selected status"
   },
   "removeModeSelected": {
-    "message": "Remove mode selected: old messages are removed from the current page display.",
+    "message": "Maximum Performance selected: old messages are discarded from the current page display.",
     "description": "Remove mode selected status"
   },
   "keepRoundsLabel": {
@@ -74,6 +74,24 @@
       "TOTAL": {
         "content": "$2",
         "example": "27"
+      }
+    }
+  },
+  "optimizedRoundsLabel": {
+    "message": "Optimized",
+    "description": "Metric label for optimized rounds"
+  },
+  "domReductionLabel": {
+    "message": "Page weight reduced",
+    "description": "Metric label for estimated DOM reduction"
+  },
+  "optimizedRoundsValue": {
+    "message": "$ROUNDS$ rounds",
+    "description": "Metric value for optimized rounds",
+    "placeholders": {
+      "ROUNDS": {
+        "content": "$1",
+        "example": "17"
       }
     }
   },
@@ -218,7 +236,7 @@
     }
   },
   "removedOlderMessages": {
-    "message": "Older messages removed from this page ($ROUNDS$ rounds)",
+    "message": "Older messages optimized for maximum performance ($ROUNDS$ rounds)",
     "description": "Placeholder shown where old messages were removed",
     "placeholders": {
       "ROUNDS": {

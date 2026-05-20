@@ -16,7 +16,7 @@ Features:
 
 - Keep only recent conversation rounds
 - Reduce lag in long chats
-- Choose Safe, Performance, or Remove mode
+- Choose Safe Mode, Performance Mode, or Maximum Performance
 - Improve browser performance
 - Make long ChatGPT sessions smoother
 
@@ -26,7 +26,7 @@ Features:
 
 - 保留最近 N 轮对话
 - 减少长会话卡顿
-- 支持安全、性能、移除三种模式
+- 支持安全模式、性能模式、极致性能模式
 - 提升页面响应速度
 - 让长时间使用更流畅
 
@@ -34,5 +34,5 @@ Features:
 
 - Reduce lag in long conversations
 - Smooth ChatGPT experience
-- Safe / Performance / Remove modes
+- Safe / Performance / Maximum Performance modes
 - Keep only recent N rounds

@@ -12,7 +12,7 @@
     "description": "弹窗标题"
   },
   "subtitle": {
-    "message": "长对话体验控制",
+    "message": "长对话体验优化",
     "description": "弹窗副标题"
   },
   "modeSectionTitle": {
@@ -32,15 +32,15 @@
     "description": "性能模式标题"
   },
   "performanceModeDesc": {
-    "message": "本地保存旧消息快照，并从 DOM 中移除，可展开恢复。",
+    "message": "本地保存旧消息快照，并移出 DOM，可展开恢复。",
     "description": "性能模式说明"
   },
   "removeModeTitle": {
-    "message": "移除模式",
+    "message": "极致性能模式",
     "description": "移除模式标题"
   },
   "removeModeDesc": {
-    "message": "直接移除旧页面节点。减负最强，刷新页面恢复。",
+    "message": "直接丢弃旧页面节点，减负最强。刷新页面恢复。",
     "description": "移除模式说明"
   },
   "safeModeSelected": {
@@ -52,7 +52,7 @@
     "description": "性能模式选中状态"
   },
   "removeModeSelected": {
-    "message": "已选择移除模式：旧消息会从当前页面显示中移除。",
+    "message": "已选择极致性能模式：旧消息会从当前页面显示中丢弃。",
     "description": "移除模式选中状态"
   },
   "keepRoundsLabel": {
@@ -74,6 +74,24 @@
       "TOTAL": {
         "content": "$2",
         "example": "27"
+      }
+    }
+  },
+  "optimizedRoundsLabel": {
+    "message": "已优化",
+    "description": "已优化轮数指标标签"
+  },
+  "domReductionLabel": {
+    "message": "页面负载降低",
+    "description": "DOM 减少比例指标标签"
+  },
+  "optimizedRoundsValue": {
+    "message": "$ROUNDS$ 轮",
+    "description": "已优化轮数指标值",
+    "placeholders": {
+      "ROUNDS": {
+        "content": "$1",
+        "example": "17"
       }
     }
   },
@@ -218,7 +236,7 @@
     }
   },
   "removedOlderMessages": {
-    "message": "旧消息已从当前页面移除（$ROUNDS$ 轮）",
+    "message": "旧消息已按极致性能优化（$ROUNDS$ 轮）",
     "description": "旧消息移除后的占位提示",
     "placeholders": {
       "ROUNDS": {

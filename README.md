@@ -9,7 +9,7 @@ The extension keeps the latest N conversation rounds visible and can collapse ol
 Long Conversation Experience:
 
 - Keep recent conversation rounds visible
-- Choose Safe, Performance, or Remove mode for older messages
+- Choose Safe Mode, Performance Mode, or Maximum Performance for older messages
 - Reduce lag in long chats
 - Improve browser responsiveness
 - Stay local, lightweight, and privacy-first
@@ -19,7 +19,7 @@ Long Conversation Experience:
 - Configurable recent-round limit, defaulting to 10 rounds
 - Safe mode: hide older messages visually and expand instantly
 - Performance mode: save older message HTML snapshots to the extension's local IndexedDB, remove those nodes from the page DOM, and expand by restoring the snapshot
-- Remove mode: remove older page nodes without saving a snapshot; refresh the ChatGPT page to restore the full conversation
+- Maximum Performance: discard older page nodes without saving a snapshot; refresh the ChatGPT page to restore the full conversation
 - Options page for Performance mode snapshot TTL and manual cleanup
 - Optional auto-maintain mode for long sessions
 - Conversation round count badge
@@ -58,7 +58,7 @@ All behavior runs locally in the browser page. Performance mode stores static sn
 4. Choose a mode:
    - Safe: lowest risk, smaller visual surface
    - Performance: real DOM reduction with local snapshots
-   - Remove: strongest page reduction, no in-page restore
+   - Maximum Performance: strongest page reduction, no in-page restore
 5. Click Optimize current conversation
 
 Safe and Performance mode show an expandable placeholder for older messages. Remove mode leaves a non-expandable placeholder. Refreshing the page asks ChatGPT to render the full conversation again.
