@@ -316,10 +316,10 @@
     "description": "Clear snapshots button"
   },
   "snapshotStatsText": {
-    "message": "Saved groups: $GROUPS$ | Saved rounds: $ROUNDS$ | Saved turns: $TURNS$",
+    "message": "Saved conversations: $CONVERSATIONS$ | Saved rounds: $ROUNDS$ | Saved turns: $TURNS$",
     "description": "Snapshot storage stats",
     "placeholders": {
-      "GROUPS": { "content": "$1", "example": "2" },
+      "CONVERSATIONS": { "content": "$1", "example": "2" },
       "ROUNDS": { "content": "$2", "example": "18" },
       "TURNS": { "content": "$3", "example": "36" }
     }
@@ -333,7 +333,7 @@
     "description": "Settings saved status"
   },
   "expiredSnapshotsCleaned": {
-    "message": "Cleaned $COUNT$ expired snapshot groups.",
+    "message": "Cleaned $COUNT$ expired conversation snapshots.",
     "description": "Expired cleanup status",
     "placeholders": {
       "COUNT": { "content": "$1", "example": "3" }
@@ -346,6 +346,26 @@
   "snapshotsCleared": {
     "message": "Local snapshots cleared.",
     "description": "Snapshots cleared status"
+  },
+  "snapshotTestTitle": {
+    "message": "Snapshot test viewer",
+    "description": "Snapshot test viewer section title"
+  },
+  "snapshotTestDesc": {
+    "message": "Inspect locally saved Performance mode snapshots by conversation ID.",
+    "description": "Snapshot test viewer description"
+  },
+  "refreshSnapshotsButton": {
+    "message": "Refresh snapshot list",
+    "description": "Refresh snapshot list button"
+  },
+  "loadingSnapshots": {
+    "message": "Loading snapshots...",
+    "description": "Loading snapshots message"
+  },
+  "noSavedSnapshots": {
+    "message": "No saved conversation snapshots.",
+    "description": "No saved snapshots message"
   },
   "operationFailed": {
     "message": "Operation failed.",

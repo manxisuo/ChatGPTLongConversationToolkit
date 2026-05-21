@@ -8,13 +8,23 @@ const CLEANUP_MODES = {
 
 let autoMaintainEnabled = false;
 let autoMaintainKeepRounds = 10;
-let cleanupModeEnabled = CLEANUP_MODES.SAFE;
+let cleanupModeEnabled = CLEANUP_MODES.PERFORMANCE;
 let observer = null;
 let cleanupTimer = null;
 let badgeTimer = null;
 let domCheckTimer = null;
 let badgeObserver = null;
 let reconcileQueue = Promise.resolve();
+const MAX_INCOMPLETE_RETRIES = 30;
+let incompleteRetryCount = 0;
+
+class IncompleteTurnError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = 'IncompleteTurnError';
+    this.details = details;
+  }
+}
 
 function getMessage(key, substitutions = []) {
   return chrome.i18n.getMessage(key, substitutions);
@@ -58,13 +68,112 @@ function toWholeRoundTurnCount(turnCount) {
   return Math.max(0, turnCount - (turnCount % 2));
 }
 
+function getTurnIdentityFromElement(turnEl) {
+  return turnEl?.dataset?.turnId || turnEl?.getAttribute?.('data-turn-id') || turnEl?.querySelector?.('[data-turn-id]')?.getAttribute('data-turn-id') || '';
+}
+
+function getTurnRoleFromElement(turnEl) {
+  return turnEl?.querySelector?.('[data-message-author-role]')?.getAttribute('data-message-author-role') || 'unknown';
+}
+
+function getTurnMetaFromElement(turnEl) {
+  return {
+    id: getTurnIdentityFromElement(turnEl),
+    role: getTurnRoleFromElement(turnEl),
+    textLength: (turnEl?.innerText || turnEl?.textContent || '').trim().length
+  };
+}
+
+function isCompleteTurnMeta(meta) {
+  return Boolean(meta.id) && meta.role !== 'unknown' && meta.textLength > 0;
+}
+
+function getIncompleteTurnMeta(turns) {
+  return turns.map(getTurnMetaFromElement).filter(meta => !isCompleteTurnMeta(meta));
+}
+
+function getIncompleteHtmlTurnMeta(htmlList) {
+  return htmlList.map(getTurnMetaFromHtml).filter(meta => !isCompleteTurnMeta(meta));
+}
+
+function isIncompleteTurnError(error) {
+  return error?.name === 'IncompleteTurnError';
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getScrollableAncestor(element) {
+  let current = element?.parentElement;
+  while (current && current !== document.body) {
+    const style = getComputedStyle(current);
+    if (/(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return document.scrollingElement || document.documentElement;
+}
+
+function captureScrollState(elements) {
+  const containers = new Set(elements.map(getScrollableAncestor).filter(Boolean));
+  const states = Array.from(containers).map(container => ({
+    container,
+    scrollTop: container.scrollTop,
+    scrollLeft: container.scrollLeft
+  }));
+  const windowState = { x: window.scrollX, y: window.scrollY };
+
+  return () => {
+    states.forEach(({ container, scrollTop, scrollLeft }) => {
+      container.scrollTop = scrollTop;
+      container.scrollLeft = scrollLeft;
+    });
+    window.scrollTo(windowState.x, windowState.y);
+  };
+}
+
+async function waitForCompleteTurns(turns, timeoutMs = 6000) {
+  let incompleteTurns = getIncompleteTurnMeta(turns);
+  if (incompleteTurns.length === 0) return;
+
+  const restoreScroll = captureScrollState(turns);
+  const deadline = Date.now() + timeoutMs;
+
+  try {
+    while (Date.now() < deadline) {
+      const incompleteIds = new Set(incompleteTurns.map(turn => turn.id).filter(Boolean));
+      const targetTurns = turns.filter(turn => incompleteIds.has(getTurnIdentityFromElement(turn)));
+      const turnsToHydrate = targetTurns.length > 0 ? targetTurns : turns;
+
+      for (const turn of turnsToHydrate) {
+        turn.scrollIntoView({ block: 'center', inline: 'nearest' });
+        await sleep(180);
+      }
+
+      await sleep(250);
+      incompleteTurns = getIncompleteTurnMeta(turns);
+      if (incompleteTurns.length === 0) return;
+    }
+  } finally {
+    restoreScroll();
+  }
+
+  throw new IncompleteTurnError('ChatGPT messages are still loading. Waiting before optimizing.', {
+    incompleteTurns: incompleteTurns.slice(0, 8),
+    requestedTurns: turns.length
+  });
+}
+
+function getTurnMetaFromHtml(html) {
+  const parsed = new DOMParser().parseFromString(html, 'text/html');
+  return getTurnMetaFromElement(parsed.body.firstElementChild);
+}
+
 function getConversationId() {
   const match = location.pathname.match(/\/c\/([^/?#]+)/);
   return match?.[1] || 'unknown-conversation';
-}
-
-function makeGroupId(conversationId) {
-  return `${conversationId}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function getExistingPlaceholders() {
@@ -95,13 +204,11 @@ function getRoundStats() {
 
 function showTurn(turnEl) {
   delete turnEl.dataset.chcHidden;
-  delete turnEl.dataset.chcGroupId;
   turnEl.style.removeProperty('display');
 }
 
-function hideTurn(turnEl, groupId) {
+function hideTurn(turnEl) {
   turnEl.dataset.chcHidden = 'true';
-  turnEl.dataset.chcGroupId = groupId;
   turnEl.style.display = 'none';
 }
 
@@ -206,11 +313,10 @@ function setPlaceholderContent(placeholder, { mode, hiddenTurns }) {
   bindPlaceholderExpandHandlers(placeholder, canExpand);
 }
 
-function createPlaceholder({ mode, groupId, hiddenTurns }) {
+function createPlaceholder({ mode, hiddenTurns }) {
   const placeholder = document.createElement('section');
   placeholder.dataset.chcPlaceholder = 'true';
   placeholder.dataset.chcMode = mode;
-  placeholder.dataset.chcGroupId = groupId;
 
   Object.assign(placeholder.style, {
     boxSizing: 'border-box',
@@ -230,14 +336,13 @@ function createPlaceholder({ mode, groupId, hiddenTurns }) {
   return placeholder;
 }
 
-function ensurePlaceholder({ mode, groupId, hiddenTurns, beforeTurn }) {
+function ensurePlaceholder({ mode, hiddenTurns, beforeTurn }) {
   let placeholder = getPlaceholderForMode(mode);
   if (!placeholder) {
-    placeholder = createPlaceholder({ mode, groupId, hiddenTurns });
+    placeholder = createPlaceholder({ mode, hiddenTurns });
     const parent = beforeTurn?.parentNode || findThread();
     if (parent) parent.insertBefore(placeholder, beforeTurn || parent.firstChild);
   }
-  placeholder.dataset.chcGroupId = groupId;
   setPlaceholderContent(placeholder, { mode, hiddenTurns });
   return placeholder;
 }
@@ -286,7 +391,6 @@ function expandPlaceholder(placeholder) {
 class SafeDomStore {
   constructor() {
     this.mode = CLEANUP_MODES.SAFE;
-    this.groupId = getPlaceholderForMode(this.mode)?.dataset.chcGroupId || makeGroupId(getConversationId());
   }
 
   hiddenTurns() {
@@ -302,12 +406,11 @@ class SafeDomStore {
     const firstVisible = getVisibleTurnElements()[turns.length] || getVisibleTurnElements()[0] || null;
     const placeholder = ensurePlaceholder({
       mode: this.mode,
-      groupId: this.groupId,
       hiddenTurns: this.hiddenCount() + turns.length,
       beforeTurn: firstVisible
     });
     turns.forEach((turn) => {
-      hideTurn(turn, this.groupId);
+      hideTurn(turn);
       placeholder.parentNode?.insertBefore(turn, placeholder);
     });
     setPlaceholderContent(placeholder, { mode: this.mode, hiddenTurns: this.hiddenCount() });
@@ -337,21 +440,16 @@ class IndexedDbStore {
   constructor() {
     this.mode = CLEANUP_MODES.PERFORMANCE;
     this.placeholder = getPlaceholderForMode(this.mode);
-    this.groupId = this.placeholder?.dataset.chcGroupId || makeGroupId(getConversationId());
+    this.conversationId = getConversationId();
     this.snapshot = null;
     this.html = [];
   }
 
   async load() {
     if (this.snapshot !== null) return;
-    if (!this.placeholder) {
-      this.snapshot = null;
-      this.html = [];
-      return;
-    }
     const response = await sendRuntimeMessage({
       action: 'getCollapsedSnapshot',
-      groupId: this.groupId
+      conversationId: this.conversationId
     });
     this.snapshot = response?.success ? response.snapshot : null;
     this.html = this.snapshot?.html || [];
@@ -363,10 +461,17 @@ class IndexedDbStore {
   }
 
   async save(html) {
+    const incompleteTurns = getIncompleteHtmlTurnMeta(html);
+    if (incompleteTurns.length > 0) {
+      throw new IncompleteTurnError('ChatGPT messages are still loading. Waiting before optimizing.', {
+        incompleteTurns: incompleteTurns.slice(0, 8),
+        htmlTurns: html.length
+      });
+    }
     for (let index = 0; index < html.length; index += 1) {
       const turnSaveResponse = await sendRuntimeMessage({
         action: 'saveCollapsedTurn',
-        groupId: this.groupId,
+        conversationId: this.conversationId,
         index,
         html: html[index]
       });
@@ -375,10 +480,15 @@ class IndexedDbStore {
       }
     }
 
+    await sendRuntimeMessage({
+      action: 'deleteCollapsedTurnsFromIndex',
+      conversationId: this.conversationId,
+      startIndex: html.length
+    }).catch(() => {});
+
     const response = await sendRuntimeMessage({
       action: 'saveCollapsedSnapshot',
-      groupId: this.groupId,
-      conversationId: getConversationId(),
+      conversationId: this.conversationId,
       turnCount: html.length,
       roundCount: calculateRounds(html.length),
       html: []
@@ -389,15 +499,55 @@ class IndexedDbStore {
     this.html = html;
   }
 
+  async pruneVisibleDuplicates() {
+    await this.load();
+    if (this.html.length === 0) return;
+
+    const visibleIds = new Set(getVisibleTurnElements().map(getTurnIdentityFromElement).filter(Boolean));
+    if (visibleIds.size === 0) return;
+
+    const nextHtml = this.html.filter((html) => {
+      const turnId = getTurnMetaFromHtml(html).id;
+      return !turnId || !visibleIds.has(turnId);
+    });
+
+    if (nextHtml.length === this.html.length) {
+      if (!this.placeholder) {
+        this.placeholder = ensurePlaceholder({
+          mode: this.mode,
+          hiddenTurns: this.html.length,
+          beforeTurn: getVisibleTurnElements()[0] || null
+        });
+      }
+      return;
+    }
+
+    if (nextHtml.length === 0) {
+      await sendRuntimeMessage({ action: 'deleteCollapsedSnapshot', conversationId: this.conversationId }).catch(() => {});
+      this.placeholder?.remove();
+      this.placeholder = null;
+      this.html = [];
+      this.snapshot = null;
+      return;
+    }
+
+    await this.save(nextHtml);
+    this.placeholder = ensurePlaceholder({
+      mode: this.mode,
+      hiddenTurns: nextHtml.length,
+      beforeTurn: getVisibleTurnElements()[0] || null
+    });
+  }
+
   async store(turns) {
     await this.load();
     if (turns.length === 0) return this.html.length;
+    await waitForCompleteTurns(turns);
     const firstKeptTurn = getVisibleTurnElements()[turns.length] || null;
     const nextHtml = this.html.concat(turns.map(turn => turn.outerHTML));
     await this.save(nextHtml);
     this.placeholder = ensurePlaceholder({
       mode: this.mode,
-      groupId: this.groupId,
       hiddenTurns: nextHtml.length,
       beforeTurn: firstKeptTurn
     });
@@ -408,6 +558,13 @@ class IndexedDbStore {
   async restore(count) {
     await this.load();
     if (!this.placeholder || count <= 0 || this.html.length === 0) return this.html.length;
+    const incompleteSnapshotTurns = getIncompleteHtmlTurnMeta(this.html);
+    if (incompleteSnapshotTurns.length > 0) {
+      throw new IncompleteTurnError('Saved performance snapshot contains incomplete messages. Clear local snapshots and reload this conversation.', {
+        incompleteTurns: incompleteSnapshotTurns.slice(0, 8),
+        snapshotTurns: this.html.length
+      });
+    }
     const restoreCount = Math.min(count, this.html.length);
     const remainingHtml = this.html.slice(0, this.html.length - restoreCount);
     const restoredHtml = this.html.slice(this.html.length - restoreCount);
@@ -415,7 +572,7 @@ class IndexedDbStore {
     insertNodesAfter(restoredNodes, this.placeholder);
 
     if (remainingHtml.length === 0) {
-      await sendRuntimeMessage({ action: 'deleteCollapsedSnapshot', groupId: this.groupId }).catch(() => {});
+      await sendRuntimeMessage({ action: 'deleteCollapsedSnapshot', conversationId: this.conversationId }).catch(() => {});
       this.placeholder.remove();
       this.html = [];
       return 0;
@@ -423,7 +580,7 @@ class IndexedDbStore {
 
     const deleteResponse = await sendRuntimeMessage({
       action: 'deleteCollapsedTurnsFromIndex',
-      groupId: this.groupId,
+      conversationId: this.conversationId,
       startIndex: remainingHtml.length
     });
     if (!deleteResponse?.success) {
@@ -438,7 +595,6 @@ class IndexedDbStore {
 class NullStore {
   constructor() {
     this.mode = CLEANUP_MODES.REMOVE;
-    this.groupId = getPlaceholderForMode(this.mode)?.dataset.chcGroupId || makeGroupId(getConversationId());
   }
 
   hiddenCount() {
@@ -451,7 +607,6 @@ class NullStore {
     const hiddenTurns = this.hiddenCount() + turns.length;
     ensurePlaceholder({
       mode: this.mode,
-      groupId: this.groupId,
       hiddenTurns,
       beforeTurn: firstKeptTurn
     });
@@ -490,14 +645,16 @@ function enqueueReconcile(task) {
 }
 
 async function reconcileConversationUnlocked(keepRounds, cleanupMode) {
-  const mode = Object.values(CLEANUP_MODES).includes(cleanupMode) ? cleanupMode : CLEANUP_MODES.SAFE;
+  const mode = Object.values(CLEANUP_MODES).includes(cleanupMode) ? cleanupMode : CLEANUP_MODES.PERFORMANCE;
   await restoreForeignRecoverableStores(mode);
 
   const store = createStore(mode);
+  if (mode === CLEANUP_MODES.PERFORMANCE) {
+    await store.pruneVisibleDuplicates();
+  }
   const hiddenCount = await store.hiddenCount();
   const visibleTurns = getVisibleTurnElements();
   const targetVisibleTurns = keepRounds * 2;
-
   if (visibleTurns.length > targetVisibleTurns) {
     const turnsToStoreCount = toWholeRoundTurnCount(visibleTurns.length - targetVisibleTurns);
     const turnsToStore = visibleTurns.slice(0, turnsToStoreCount);
@@ -519,6 +676,7 @@ async function reconcileConversationUnlocked(keepRounds, cleanupMode) {
 
   scheduleBadgeUpdate();
   const stats = getRoundStats();
+  incompleteRetryCount = 0;
   return {
     success: true,
     message: getModeResultMessage(mode, stats),
@@ -553,14 +711,25 @@ async function removeOldRounds(keepRounds, cleanupMode) {
   }
 }
 
-function scheduleAutoCleanup() {
+function retryAutoCleanupAfterIncomplete(error) {
+  if (!autoMaintainEnabled || !isIncompleteTurnError(error)) return false;
+  if (incompleteRetryCount >= MAX_INCOMPLETE_RETRIES) {
+    return false;
+  }
+  incompleteRetryCount += 1;
+  scheduleAutoCleanup(1000);
+  return true;
+}
+
+function scheduleAutoCleanup(delay = 500) {
   if (cleanupTimer) clearTimeout(cleanupTimer);
   cleanupTimer = setTimeout(() => {
     if (!autoMaintainEnabled) return;
     reconcileConversation(autoMaintainKeepRounds, cleanupModeEnabled).catch((error) => {
+      if (retryAutoCleanupAfterIncomplete(error)) return;
       console.error('Auto-maintain failed:', error);
     });
-  }, 500);
+  }, delay);
 }
 
 async function runAutoCleanupNow() {
@@ -568,12 +737,20 @@ async function runAutoCleanupNow() {
     scheduleBadgeUpdate();
     return { success: true, stats: getRoundStats() };
   }
-  const result = await reconcileConversation(autoMaintainKeepRounds, cleanupModeEnabled);
-  return {
-    success: result.success,
-    message: result.message,
-    stats: getRoundStats()
-  };
+  try {
+    const result = await reconcileConversation(autoMaintainKeepRounds, cleanupModeEnabled);
+    return {
+      success: result.success,
+      message: result.message,
+      stats: getRoundStats()
+    };
+  } catch (error) {
+    if (retryAutoCleanupAfterIncomplete(error)) {
+      scheduleBadgeUpdate();
+      return { success: true, message: error.message, stats: getRoundStats() };
+    }
+    throw error;
+  }
 }
 
 function isTurnRelatedNode(node) {
@@ -593,6 +770,13 @@ function isTurnRelatedNode(node) {
   );
 }
 
+function isTurnRelatedMutation(mutation) {
+  if (mutation.type === 'childList') {
+    return [...mutation.addedNodes].some(isTurnRelatedNode);
+  }
+  return false;
+}
+
 function startObserver() {
   if (observer) return;
   const target = document.documentElement || document.body;
@@ -601,11 +785,9 @@ function startObserver() {
   observer = new MutationObserver((mutations) => {
     if (!autoMaintainEnabled) return;
     for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (isTurnRelatedNode(node)) {
-          scheduleAutoCleanup();
-          return;
-        }
+      if (isTurnRelatedMutation(mutation)) {
+        scheduleAutoCleanup();
+        return;
       }
     }
   });
@@ -628,7 +810,7 @@ function updateAutoMaintain(enabled, keepRounds, cleanupMode, runImmediately = f
   const wasEnabled = autoMaintainEnabled;
   autoMaintainEnabled = enabled;
   autoMaintainKeepRounds = keepRounds;
-  cleanupModeEnabled = cleanupMode || CLEANUP_MODES.SAFE;
+  cleanupModeEnabled = cleanupMode || CLEANUP_MODES.PERFORMANCE;
   if (wasEnabled !== enabled) refreshPlaceholderInteractivity();
 
   if (enabled) {
@@ -711,7 +893,7 @@ function startBadgeObserver() {
 
 function resolveCleanupMode(result) {
   if (result.cleanupMode) return result.cleanupMode;
-  return result.collapseOldMessages === false ? CLEANUP_MODES.REMOVE : CLEANUP_MODES.SAFE;
+  return result.collapseOldMessages === false ? CLEANUP_MODES.REMOVE : CLEANUP_MODES.PERFORMANCE;
 }
 
 async function initAutoMaintain() {
@@ -719,7 +901,7 @@ async function initAutoMaintain() {
     const result = await chrome.storage.local.get({
       autoMaintain: false,
       keepRounds: 10,
-      cleanupMode: CLEANUP_MODES.SAFE,
+      cleanupMode: CLEANUP_MODES.PERFORMANCE,
       collapseOldMessages: true
     });
     updateAutoMaintain(result.autoMaintain, result.keepRounds, resolveCleanupMode(result));

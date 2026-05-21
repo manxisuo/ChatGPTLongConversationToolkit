@@ -35,6 +35,22 @@
 
       <div id="status" class="status"></div>
     </section>
+
+    <section class="panel test-panel">
+      <h2 data-i18n="snapshotTestTitle">Snapshot test viewer</h2>
+      <p class="muted" data-i18n="snapshotTestDesc">
+        Inspect locally saved Performance mode snapshots by conversation ID.
+      </p>
+
+      <div class="actions">
+        <button id="refreshSnapshotList" class="btn secondary" data-i18n="refreshSnapshotsButton">
+          Refresh snapshot list
+        </button>
+      </div>
+
+      <div id="snapshotConversationList" class="conversation-list"></div>
+      <pre id="snapshotJsonViewer" class="json-viewer"></pre>
+    </section>
   </main>
   <script src="options.js"></script>
 </body>

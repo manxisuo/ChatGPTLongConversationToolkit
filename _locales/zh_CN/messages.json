@@ -316,10 +316,10 @@
     "description": "清除快照按钮"
   },
   "snapshotStatsText": {
-    "message": "已保存组：$GROUPS$ | 已保存轮数：$ROUNDS$ | 已保存消息：$TURNS$",
+    "message": "已保存会话：$CONVERSATIONS$ | 已保存轮数：$ROUNDS$ | 已保存消息：$TURNS$",
     "description": "快照存储统计",
     "placeholders": {
-      "GROUPS": { "content": "$1", "example": "2" },
+      "CONVERSATIONS": { "content": "$1", "example": "2" },
       "ROUNDS": { "content": "$2", "example": "18" },
       "TURNS": { "content": "$3", "example": "36" }
     }
@@ -333,7 +333,7 @@
     "description": "设置保存状态"
   },
   "expiredSnapshotsCleaned": {
-    "message": "已清理 $COUNT$ 组过期快照。",
+    "message": "已清理 $COUNT$ 个过期会话快照。",
     "description": "过期快照清理状态",
     "placeholders": {
       "COUNT": { "content": "$1", "example": "3" }
@@ -346,6 +346,26 @@
   "snapshotsCleared": {
     "message": "本地快照已清除。",
     "description": "快照已清除状态"
+  },
+  "snapshotTestTitle": {
+    "message": "快照测试查看器",
+    "description": "快照测试查看区域标题"
+  },
+  "snapshotTestDesc": {
+    "message": "按会话 ID 查看性能模式保存在本地的快照内容。",
+    "description": "快照测试查看区域说明"
+  },
+  "refreshSnapshotsButton": {
+    "message": "刷新快照列表",
+    "description": "刷新快照列表按钮"
+  },
+  "loadingSnapshots": {
+    "message": "正在加载快照...",
+    "description": "快照加载提示"
+  },
+  "noSavedSnapshots": {
+    "message": "暂无已保存的会话快照。",
+    "description": "无已保存快照提示"
   },
   "operationFailed": {
     "message": "操作失败。",

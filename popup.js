@@ -39,13 +39,13 @@ async function getCurrentTab() {
 }
 
 function getSelectedMode() {
-  return document.querySelector('input[name="cleanupMode"]:checked')?.value || CLEANUP_MODES.SAFE;
+  return document.querySelector('input[name="cleanupMode"]:checked')?.value || CLEANUP_MODES.PERFORMANCE;
 }
 
 function setSelectedMode(cleanupMode) {
   const mode = Object.values(CLEANUP_MODES).includes(cleanupMode)
     ? cleanupMode
-    : CLEANUP_MODES.SAFE;
+    : CLEANUP_MODES.PERFORMANCE;
   const input = document.querySelector(`input[name="cleanupMode"][value="${mode}"]`);
   if (input) {
     input.checked = true;
@@ -64,14 +64,14 @@ function resolveCleanupMode(result) {
   if (result.cleanupMode) {
     return result.cleanupMode;
   }
-  return result.collapseOldMessages === false ? CLEANUP_MODES.REMOVE : CLEANUP_MODES.SAFE;
+  return result.collapseOldMessages === false ? CLEANUP_MODES.REMOVE : CLEANUP_MODES.PERFORMANCE;
 }
 
 async function loadSettings() {
   const result = await chrome.storage.local.get({
     keepRounds: 10,
     autoMaintain: false,
-    cleanupMode: CLEANUP_MODES.SAFE,
+    cleanupMode: CLEANUP_MODES.PERFORMANCE,
     collapseOldMessages: true
   });
   document.getElementById('keepRounds').value = result.keepRounds;

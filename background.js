@@ -2,9 +2,9 @@
 
 const CHATGPT_HOSTS = ['chat.openai.com', 'chatgpt.com'];
 const SNAPSHOT_DB_NAME = 'ChatGPTHistoryCleanerSnapshots';
-const SNAPSHOT_DB_VERSION = 2;
-const SNAPSHOT_STORE_NAME = 'collapsedGroups';
-const SNAPSHOT_TURN_STORE_NAME = 'collapsedTurns';
+const SNAPSHOT_DB_VERSION = 3;
+const SNAPSHOT_STORE_NAME = 'conversationSnapshots';
+const SNAPSHOT_TURN_STORE_NAME = 'conversationSnapshotTurns';
 const DEFAULT_SNAPSHOT_TTL_DAYS = 30;
 
 function isChatGPTUrl(url) {
@@ -56,13 +56,12 @@ function openSnapshotDb() {
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(SNAPSHOT_STORE_NAME)) {
-        const store = db.createObjectStore(SNAPSHOT_STORE_NAME, { keyPath: 'groupId' });
-        store.createIndex('conversationId', 'conversationId', { unique: false });
+        const store = db.createObjectStore(SNAPSHOT_STORE_NAME, { keyPath: 'conversationId' });
         store.createIndex('createdAt', 'createdAt', { unique: false });
       }
       if (!db.objectStoreNames.contains(SNAPSHOT_TURN_STORE_NAME)) {
         const turnStore = db.createObjectStore(SNAPSHOT_TURN_STORE_NAME, { keyPath: 'id' });
-        turnStore.createIndex('groupId', 'groupId', { unique: false });
+        turnStore.createIndex('conversationId', 'conversationId', { unique: false });
       }
     };
 
@@ -94,17 +93,17 @@ async function putSnapshot(snapshot) {
   });
 }
 
-async function getSnapshot(groupId) {
+async function getSnapshot(conversationId) {
   return withSnapshotStore('readonly', (store) => new Promise((resolve, reject) => {
-    const request = store.get(groupId);
+    const request = store.get(conversationId);
     request.onsuccess = () => resolve(request.result || null);
     request.onerror = () => reject(request.error);
   }));
 }
 
-async function deleteSnapshot(groupId) {
+async function deleteSnapshot(conversationId) {
   await withSnapshotStore('readwrite', (store) => {
-    store.delete(groupId);
+    store.delete(conversationId);
   });
 }
 
@@ -114,9 +113,9 @@ async function putSnapshotTurn(turnSnapshot) {
   });
 }
 
-async function getSnapshotTurns(groupId) {
+async function getSnapshotTurns(conversationId) {
   return withSnapshotStoreByName(SNAPSHOT_TURN_STORE_NAME, 'readonly', (store) => new Promise((resolve, reject) => {
-    const request = store.index('groupId').getAll(groupId);
+    const request = store.index('conversationId').getAll(conversationId);
     request.onsuccess = () => {
       resolve((request.result || []).sort((a, b) => a.index - b.index));
     };
@@ -124,15 +123,15 @@ async function getSnapshotTurns(groupId) {
   }));
 }
 
-async function deleteSnapshotTurns(groupId) {
-  const turns = await getSnapshotTurns(groupId);
+async function deleteSnapshotTurns(conversationId) {
+  const turns = await getSnapshotTurns(conversationId);
   await withSnapshotStoreByName(SNAPSHOT_TURN_STORE_NAME, 'readwrite', (store) => {
     turns.forEach((turn) => store.delete(turn.id));
   });
 }
 
-async function deleteSnapshotTurnsFromIndex(groupId, startIndex) {
-  const turns = await getSnapshotTurns(groupId);
+async function deleteSnapshotTurnsFromIndex(conversationId, startIndex) {
+  const turns = await getSnapshotTurns(conversationId);
   const removableTurns = turns.filter((turn) => turn.index >= startIndex);
   await withSnapshotStoreByName(SNAPSHOT_TURN_STORE_NAME, 'readwrite', (store) => {
     removableTurns.forEach((turn) => store.delete(turn.id));
@@ -149,7 +148,7 @@ async function getAllSnapshots() {
 
 async function clearAllSnapshots() {
   const snapshots = await getAllSnapshots();
-  await Promise.all(snapshots.map(snapshot => deleteSnapshotTurns(snapshot.groupId)));
+  await Promise.all(snapshots.map(snapshot => deleteSnapshotTurns(snapshot.conversationId)));
   await withSnapshotStore('readwrite', (store) => {
     store.clear();
   });
@@ -161,8 +160,8 @@ async function cleanupExpiredSnapshots(ttlDays) {
   const snapshots = await getAllSnapshots();
   const expired = snapshots.filter(snapshot => (snapshot.updatedAt || snapshot.createdAt || 0) < cutoff);
   await Promise.all(expired.map(snapshot => Promise.all([
-    deleteSnapshot(snapshot.groupId),
-    deleteSnapshotTurns(snapshot.groupId)
+    deleteSnapshot(snapshot.conversationId),
+    deleteSnapshotTurns(snapshot.conversationId)
   ])));
   return expired.length;
 }
@@ -174,9 +173,35 @@ async function getSnapshotStats() {
     turnCount += snapshot.turnCount || 0;
   }
   return {
-    groupCount: snapshots.length,
+    conversationCount: snapshots.length,
     turnCount,
     roundCount: Math.floor(turnCount / 2)
+  };
+}
+
+async function listConversationSnapshots() {
+  const snapshots = await getAllSnapshots();
+  return snapshots
+    .map(snapshot => ({
+      conversationId: snapshot.conversationId,
+      turnCount: snapshot.turnCount || 0,
+      roundCount: snapshot.roundCount || Math.floor((snapshot.turnCount || 0) / 2),
+      createdAt: snapshot.createdAt || null,
+      updatedAt: snapshot.updatedAt || null
+    }))
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+}
+
+async function getConversationSnapshotDetail(conversationId) {
+  const [snapshot, turns] = await Promise.all([
+    getSnapshot(conversationId),
+    getSnapshotTurns(conversationId)
+  ]);
+  if (!snapshot) return null;
+  return {
+    ...snapshot,
+    html: turns.map(turn => turn.html),
+    turns
   };
 }
 
@@ -204,8 +229,17 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.storage.local.set({
       enabled: true,
       autoRemove: false,
-      cleanupMode: 'safe',
+      cleanupMode: 'performance',
       collapseOldMessages: true
+    });
+  } else if (details.reason === 'update') {
+    chrome.storage.local.get({ cleanupMode: null }, (settings) => {
+      if (!settings.cleanupMode) {
+        chrome.storage.local.set({
+          cleanupMode: 'performance',
+          collapseOldMessages: true
+        });
+      }
     });
   }
 });
@@ -254,7 +288,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       cleanupExpiredSnapshots(settings.snapshotTtlDays).catch(() => {});
     });
     putSnapshot({
-      groupId: request.groupId,
       conversationId: request.conversationId,
       turnCount: request.turnCount,
       roundCount: request.roundCount,
@@ -271,8 +304,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'cleanupExpiredSnapshots') {
-    cleanupExpiredSnapshots(request.ttlDays).then((deletedGroups) => {
-      sendResponse({ success: true, deletedGroups });
+    cleanupExpiredSnapshots(request.ttlDays).then((deletedSnapshots) => {
+      sendResponse({ success: true, deletedSnapshots });
     }).catch((error) => {
       sendResponse({ success: false, message: error.message });
     });
@@ -297,14 +330,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === 'listConversationSnapshots') {
+    listConversationSnapshots().then((snapshots) => {
+      sendResponse({ success: true, snapshots });
+    }).catch((error) => {
+      sendResponse({ success: false, message: error.message });
+    });
+    return true;
+  }
+
+  if (request.action === 'getConversationSnapshotDetail') {
+    getConversationSnapshotDetail(request.conversationId).then((snapshot) => {
+      sendResponse({ success: true, snapshot });
+    }).catch((error) => {
+      sendResponse({ success: false, message: error.message });
+    });
+    return true;
+  }
+
   if (request.action === 'saveCollapsedTurn') {
     putSnapshotTurn({
-      id: `${request.groupId}:${request.index}`,
-      groupId: request.groupId,
+      id: `${request.conversationId}:${request.index}`,
+      conversationId: request.conversationId,
       index: request.index,
       html: request.html,
       createdAt: Date.now(),
-      schemaVersion: 2
+      schemaVersion: 1
     }).then(() => {
       sendResponse({ success: true });
     }).catch((error) => {
@@ -315,8 +366,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'getCollapsedSnapshot') {
     Promise.all([
-      getSnapshot(request.groupId),
-      getSnapshotTurns(request.groupId)
+      getSnapshot(request.conversationId),
+      getSnapshotTurns(request.conversationId)
     ]).then(([snapshot, turns]) => {
       if (snapshot && turns.length > 0) {
         snapshot.html = turns.map((turn) => turn.html);
@@ -332,8 +383,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'deleteCollapsedSnapshot') {
     Promise.all([
-      deleteSnapshot(request.groupId),
-      deleteSnapshotTurns(request.groupId)
+      deleteSnapshot(request.conversationId),
+      deleteSnapshotTurns(request.conversationId)
     ]).then(() => {
       sendResponse({ success: true });
     }).catch((error) => {
@@ -343,7 +394,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'deleteCollapsedTurnsFromIndex') {
-    deleteSnapshotTurnsFromIndex(request.groupId, request.startIndex).then(() => {
+    deleteSnapshotTurnsFromIndex(request.conversationId, request.startIndex).then(() => {
       sendResponse({ success: true });
     }).catch((error) => {
       sendResponse({ success: false, message: error.message });
