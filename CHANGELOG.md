@@ -1,13 +1,13 @@
 # Changelog
 
-## Version 1.3.0 - Performance Update
+## Version 1.3.0 - Long Conversation Control
 
-ChatGPT History Cleaner is evolving into a Performance Booster.
+ChatGPT History Cleaner is evolving into ChatGPT Conversation Manager.
 
 What's new:
 
-- Improved long conversation experience
-- Added Safe, Performance, and Remove modes for older messages
-- Added local IndexedDB snapshots for Performance mode
-- Better organization for extended chats
-- UI and copy updates for the performance-focused positioning
+- Reframed the extension around long conversation view control
+- Added Visual Control for safely hiding and expanding older rounds
+- Kept Refresh Restore for users who want stronger page reduction until refresh
+- Removed Local Snapshot mode because ChatGPT virtualization makes stored DOM snapshots unreliable
+- Updated UI and copy for the new conversation-management direction

@@ -10,7 +10,7 @@
   <main class="container">
     <header class="header">
       <div>
-        <h1 data-i18n="title">ChatGPT Cleaner & Booster</h1>
+        <h1 data-i18n="title">Conversation Manager</h1>
         <p data-i18n="subtitle">Long conversation control</p>
       </div>
       <span id="currentRounds" class="current-rounds-badge"></span>
@@ -29,18 +29,10 @@
         </label>
 
         <label class="mode-card">
-          <input type="radio" name="cleanupMode" value="performance" />
-          <span class="mode-content">
-            <span class="mode-title" data-i18n="performanceModeTitle">Performance Mode</span>
-            <span class="mode-desc" data-i18n="performanceModeDesc">Store old messages locally, remove them from DOM, expandable.</span>
-          </span>
-        </label>
-
-        <label class="mode-card">
           <input type="radio" name="cleanupMode" value="remove" />
           <span class="mode-content">
-            <span class="mode-title" data-i18n="removeModeTitle">Maximum Performance</span>
-            <span class="mode-desc" data-i18n="removeModeDesc">Discard old page nodes for the strongest reduction. Restore by refresh.</span>
+            <span class="mode-title" data-i18n="removeModeTitle">Refresh Restore</span>
+            <span class="mode-desc" data-i18n="removeModeDesc">Advanced: discard older rounds from this view. Refresh ChatGPT to restore.</span>
           </span>
         </label>
       </div>
@@ -65,16 +57,13 @@
         <strong id="optimizedRounds">0</strong>
       </div>
       <div class="metric">
-        <span class="metric-label" data-i18n="domReductionLabel">Page weight reduced</span>
+        <span class="metric-label" data-i18n="domReductionLabel">View reduced</span>
         <strong id="domReduction">0%</strong>
       </div>
     </section>
 
     <button id="removeOldRounds" class="btn btn-primary" data-i18n="cleanButton">
-      Optimize current conversation
-    </button>
-    <button id="openOptions" class="btn btn-secondary" data-i18n="openSettingsButton">
-      Settings
+      Apply view control
     </button>
 
     <div id="status" class="status"></div>

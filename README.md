@@ -1,30 +1,23 @@
-# ChatGPT History Cleaner & Performance Booster
+# ChatGPT Conversation Manager
 
-A lightweight Chrome and Edge extension for making long ChatGPT conversations smoother and easier to use.
+A lightweight Chrome and Edge extension for making long ChatGPT conversations easier to control and revisit.
 
-The extension keeps the latest N conversation rounds visible and can collapse older messages behind a small expandable placeholder. It only changes the current page display. It does not delete ChatGPT account data or upload conversation content.
-
-<img width="400" alt="image" src="https://github.com/user-attachments/assets/79c1e828-15bf-4df7-87aa-c1f6233e9095" />
-<img width="410" alt="image" src="https://github.com/user-attachments/assets/bb822f79-15b1-4291-9677-4f75dc0038b8" />
-
+The extension keeps the latest N conversation rounds visible and can hide older messages behind a small expandable placeholder. It only changes the current page display. It does not delete ChatGPT account data or upload conversation content.
 
 ## Current Focus
 
 Long Conversation Experience:
 
 - Keep recent conversation rounds visible
-- Choose Safe Mode, Performance Mode, or Maximum Performance for older messages
-- Reduce lag in long chats
-- Improve browser responsiveness
+- Hide older rounds visually when a conversation becomes hard to scan
+- Optionally discard older page nodes until refresh
 - Stay local, lightweight, and privacy-first
 
 ## Features
 
 - Configurable recent-round limit, defaulting to 10 rounds
-- Safe mode: hide older messages visually and expand instantly
-- Performance mode: save older message HTML snapshots to the extension's local IndexedDB, remove those nodes from the page DOM, and expand by restoring the snapshot
-- Maximum Performance: discard older page nodes without saving a snapshot; refresh the ChatGPT page to restore the full conversation
-- Options page for Performance mode snapshot TTL and manual cleanup
+- Visual Control: hide older messages visually and expand them in place
+- Refresh Restore: discard older page nodes from the current view; refresh ChatGPT to restore the full conversation
 - Optional auto-maintain mode for long sessions
 - Conversation round count badge
 - English and Simplified Chinese UI
@@ -36,7 +29,7 @@ Long Conversation Experience:
 - No analytics
 - No conversation upload
 
-All behavior runs locally in the browser page. Performance mode stores static snapshots locally in the extension's IndexedDB. They can be cleared from the Settings page and are automatically eligible for TTL cleanup.
+All behavior runs locally in the browser page. The extension does not store conversation snapshots or send conversation content anywhere.
 
 ## Installation
 
@@ -60,12 +53,11 @@ All behavior runs locally in the browser page. Performance mode stores static sn
 2. Click the extension icon
 3. Set how many recent rounds to keep visible
 4. Choose a mode:
-   - Safe: lowest risk, smaller visual surface
-   - Performance: real DOM reduction with local snapshots
-   - Maximum Performance: strongest page reduction, no in-page restore
-5. Click Optimize current conversation
+   - Visual Control: lowest risk, expandable in place
+   - Refresh Restore: strongest page reduction, restored by refreshing ChatGPT
+5. Click Apply view control
 
-Safe and Performance mode show an expandable placeholder for older messages. Remove mode leaves a non-expandable placeholder. Refreshing the page asks ChatGPT to render the full conversation again.
+Visual Control shows an expandable placeholder for older messages. Refresh Restore leaves a non-expandable placeholder.
 
 ## Roadmap Principle
 

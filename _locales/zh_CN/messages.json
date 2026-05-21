@@ -1,58 +1,46 @@
 {
   "extensionName": {
-    "message": "ChatGPT 历史清理器 & 性能增强器",
+    "message": "ChatGPT 对话管理器",
     "description": "扩展名称"
   },
   "extensionDescription": {
-    "message": "优化 ChatGPT 长对话体验。",
+    "message": "控制、折叠和管理 ChatGPT 长对话。",
     "description": "扩展描述"
   },
   "title": {
-    "message": "ChatGPT 清理与加速",
+    "message": "ChatGPT 对话管理",
     "description": "弹窗标题"
   },
   "subtitle": {
-    "message": "长对话体验优化",
+    "message": "长对话视图控制",
     "description": "弹窗副标题"
   },
   "modeSectionTitle": {
-    "message": "模式",
+    "message": "视图控制",
     "description": "处理模式区域标题"
   },
   "safeModeTitle": {
-    "message": "安全模式",
-    "description": "安全模式标题"
+    "message": "视觉控制",
+    "description": "视觉控制模式标题"
   },
   "safeModeDesc": {
-    "message": "仅在视觉上隐藏旧消息。恢复最快，风险最低。",
-    "description": "安全模式说明"
-  },
-  "performanceModeTitle": {
-    "message": "性能模式",
-    "description": "性能模式标题"
-  },
-  "performanceModeDesc": {
-    "message": "本地保存旧消息快照，并移出 DOM，可展开恢复。",
-    "description": "性能模式说明"
+    "message": "仅在视觉上隐藏旧轮次。最安全，也最容易恢复。",
+    "description": "视觉控制模式说明"
   },
   "removeModeTitle": {
-    "message": "极致性能模式",
+    "message": "刷新恢复",
     "description": "移除模式标题"
   },
   "removeModeDesc": {
-    "message": "直接丢弃旧页面节点，减负最强。刷新页面恢复。",
+    "message": "高级：从当前视图丢弃旧轮次，刷新 ChatGPT 后恢复。",
     "description": "移除模式说明"
   },
   "safeModeSelected": {
-    "message": "已选择安全模式：旧消息仍在页面中，仅视觉隐藏。",
-    "description": "安全模式选中状态"
-  },
-  "performanceModeSelected": {
-    "message": "已选择性能模式：旧消息会本地保存，并从 DOM 中移除。",
-    "description": "性能模式选中状态"
+    "message": "已选择视觉控制：旧轮次仍在页面中，仅视觉隐藏。",
+    "description": "视觉控制模式选中状态"
   },
   "removeModeSelected": {
-    "message": "已选择极致性能模式：旧消息会从当前页面显示中丢弃。",
+    "message": "已选择刷新恢复：旧轮次会从当前视图丢弃，刷新 ChatGPT 后恢复。",
     "description": "移除模式选中状态"
   },
   "keepRoundsLabel": {
@@ -67,41 +55,28 @@
     "message": "显示 $VISIBLE$ / 共 $TOTAL$ 轮",
     "description": "弹窗中显示当前可见轮数和总轮数",
     "placeholders": {
-      "VISIBLE": {
-        "content": "$1",
-        "example": "10"
-      },
-      "TOTAL": {
-        "content": "$2",
-        "example": "27"
-      }
+      "VISIBLE": { "content": "$1", "example": "10" },
+      "TOTAL": { "content": "$2", "example": "27" }
     }
   },
   "optimizedRoundsLabel": {
-    "message": "已优化",
-    "description": "已优化轮数指标标签"
+    "message": "已隐藏",
+    "description": "已隐藏轮数指标标签"
   },
   "domReductionLabel": {
-    "message": "页面负载降低",
-    "description": "DOM 减少比例指标标签"
+    "message": "视图减少",
+    "description": "视图减少比例指标标签"
   },
   "optimizedRoundsValue": {
     "message": "$ROUNDS$ 轮",
-    "description": "已优化轮数指标值",
+    "description": "已隐藏轮数指标值",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "17"
-      }
+      "ROUNDS": { "content": "$1", "example": "17" }
     }
   },
   "cleanButton": {
-    "message": "优化当前对话",
-    "description": "清理按钮文本"
-  },
-  "openSettingsButton": {
-    "message": "设置",
-    "description": "打开扩展设置按钮"
+    "message": "应用视图控制",
+    "description": "应用视图控制按钮文本"
   },
   "errorKeepRoundsRange": {
     "message": "保留轮数必须在 1-100 之间",
@@ -121,12 +96,9 @@
   },
   "successCleaned": {
     "message": "已保留最近 $ROUNDS$ 轮",
-    "description": "清理成功后的消息",
+    "description": "应用视图控制成功后的消息",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "10"
-      }
+      "ROUNDS": { "content": "$1", "example": "10" }
     }
   },
   "errorOperationFailedRetry": {
@@ -142,60 +114,31 @@
     "description": "未找到消息时的错误消息"
   },
   "infoNoNeedClean": {
-    "message": "当前只有 $ROUNDS$ 轮对话，无需优化",
-    "description": "无需清理时的信息消息",
+    "message": "当前只有 $ROUNDS$ 轮对话，无需隐藏旧轮次",
+    "description": "无需隐藏时的信息消息",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "10"
-      }
+      "ROUNDS": { "content": "$1", "example": "10" }
     }
   },
   "successCleanedDetailed": {
     "message": "已移除 $REMOVED$ 轮旧对话，保留最近 $KEPT$ 轮",
-    "description": "清理成功的详细消息",
+    "description": "刷新恢复模式成功的详细消息",
     "placeholders": {
-      "REMOVED": {
-        "content": "$1",
-        "example": "5"
-      },
-      "KEPT": {
-        "content": "$2",
-        "example": "10"
-      }
+      "REMOVED": { "content": "$1", "example": "5" },
+      "KEPT": { "content": "$2", "example": "10" }
     }
   },
   "successCollapsedDetailed": {
     "message": "已隐藏 $HIDDEN$ 轮旧对话，保留最近 $KEPT$ 轮可见",
-    "description": "安全模式成功的详细消息",
+    "description": "视觉控制模式成功的详细消息",
     "placeholders": {
-      "HIDDEN": {
-        "content": "$1",
-        "example": "42"
-      },
-      "KEPT": {
-        "content": "$2",
-        "example": "10"
-      }
-    }
-  },
-  "successPerformanceDetailed": {
-    "message": "已将 $HIDDEN$ 轮旧对话移出 DOM，保留最近 $KEPT$ 轮可见",
-    "description": "性能模式成功的详细消息",
-    "placeholders": {
-      "HIDDEN": {
-        "content": "$1",
-        "example": "42"
-      },
-      "KEPT": {
-        "content": "$2",
-        "example": "10"
-      }
+      "HIDDEN": { "content": "$1", "example": "42" },
+      "KEPT": { "content": "$2", "example": "10" }
     }
   },
   "errorCleanFailed": {
-    "message": "优化失败：",
-    "description": "优化失败的错误前缀"
+    "message": "视图控制失败：",
+    "description": "视图控制失败的错误前缀"
   },
   "autoMaintainLabel": {
     "message": "对话中自动保持上限",
@@ -205,10 +148,7 @@
     "message": "已开启自动保持（保留 $ROUNDS$ 轮）",
     "description": "自动保持开启时的状态消息",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "10"
-      }
+      "ROUNDS": { "content": "$1", "example": "10" }
     }
   },
   "autoMaintainDisabled": {
@@ -219,30 +159,14 @@
     "message": "已隐藏旧消息（$ROUNDS$ 轮）",
     "description": "旧消息隐藏后的占位提示",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "42"
-      }
-    }
-  },
-  "performanceHiddenOlderMessages": {
-    "message": "旧消息已本地保存并移出 DOM（$ROUNDS$ 轮）",
-    "description": "旧消息移出 DOM 后的占位提示",
-    "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "42"
-      }
+      "ROUNDS": { "content": "$1", "example": "42" }
     }
   },
   "removedOlderMessages": {
-    "message": "旧消息已按极致性能优化（$ROUNDS$ 轮）",
+    "message": "旧消息已从当前视图隐藏，刷新后恢复（$ROUNDS$ 轮）",
     "description": "旧消息移除后的占位提示",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "42"
-      }
+      "ROUNDS": { "content": "$1", "example": "42" }
     }
   },
   "expandHiddenMessages": {
@@ -253,9 +177,9 @@
     "message": "关闭自动保持后可展开。",
     "description": "自动保持禁用展开时的提示"
   },
-  "snapshotRestoreFailed": {
-    "message": "无法恢复已保存消息。请刷新页面重新加载完整对话。",
-    "description": "性能模式快照恢复失败"
+  "expandHiddenMessagesFailed": {
+    "message": "无法展开隐藏消息，请刷新页面后重试。",
+    "description": "恢复失败消息"
   },
   "domWarningTitle": {
     "message": "ChatGPT 页面结构可能已更新，扩展暂时无法识别对话内容",
@@ -269,106 +193,8 @@
     "message": "当前对话：显示 $VISIBLE$ / 共 $TOTAL$ 轮",
     "description": "图标 badge 的悬浮提示",
     "placeholders": {
-      "VISIBLE": {
-        "content": "$1",
-        "example": "10"
-      },
-      "TOTAL": {
-        "content": "$2",
-        "example": "27"
-      }
+      "VISIBLE": { "content": "$1", "example": "10" },
+      "TOTAL": { "content": "$2", "example": "27" }
     }
-  },
-  "optionsTitle": {
-    "message": "设置",
-    "description": "设置页标题"
-  },
-  "optionsSubtitle": {
-    "message": "管理性能模式的本地快照。",
-    "description": "设置页副标题"
-  },
-  "snapshotStorageTitle": {
-    "message": "本地快照",
-    "description": "快照存储区域标题"
-  },
-  "snapshotStorageDesc": {
-    "message": "性能模式会把隐藏消息保存在当前浏览器本地。这些快照不会离开你的设备。",
-    "description": "快照存储说明"
-  },
-  "snapshotTtlLabel": {
-    "message": "快照保留",
-    "description": "TTL 设置标签"
-  },
-  "daysUnit": {
-    "message": "天",
-    "description": "天数单位"
-  },
-  "saveSettingsButton": {
-    "message": "保存设置",
-    "description": "保存设置按钮"
-  },
-  "cleanupExpiredButton": {
-    "message": "清理过期快照",
-    "description": "清理过期快照按钮"
-  },
-  "clearSnapshotsButton": {
-    "message": "清除本地快照",
-    "description": "清除快照按钮"
-  },
-  "snapshotStatsText": {
-    "message": "已保存会话：$CONVERSATIONS$ | 已保存轮数：$ROUNDS$ | 已保存消息：$TURNS$",
-    "description": "快照存储统计",
-    "placeholders": {
-      "CONVERSATIONS": { "content": "$1", "example": "2" },
-      "ROUNDS": { "content": "$2", "example": "18" },
-      "TURNS": { "content": "$3", "example": "36" }
-    }
-  },
-  "snapshotTtlRangeError": {
-    "message": "快照保留时间必须在 1 到 365 天之间。",
-    "description": "TTL 校验错误"
-  },
-  "settingsSaved": {
-    "message": "设置已保存。",
-    "description": "设置保存状态"
-  },
-  "expiredSnapshotsCleaned": {
-    "message": "已清理 $COUNT$ 个过期会话快照。",
-    "description": "过期快照清理状态",
-    "placeholders": {
-      "COUNT": { "content": "$1", "example": "3" }
-    }
-  },
-  "clearSnapshotsConfirm": {
-    "message": "清除所有本地性能模式快照？此操作无法撤销。",
-    "description": "确认清除快照"
-  },
-  "snapshotsCleared": {
-    "message": "本地快照已清除。",
-    "description": "快照已清除状态"
-  },
-  "snapshotTestTitle": {
-    "message": "快照测试查看器",
-    "description": "快照测试查看区域标题"
-  },
-  "snapshotTestDesc": {
-    "message": "按会话 ID 查看性能模式保存在本地的快照内容。",
-    "description": "快照测试查看区域说明"
-  },
-  "refreshSnapshotsButton": {
-    "message": "刷新快照列表",
-    "description": "刷新快照列表按钮"
-  },
-  "loadingSnapshots": {
-    "message": "正在加载快照...",
-    "description": "快照加载提示"
-  },
-  "noSavedSnapshots": {
-    "message": "暂无已保存的会话快照。",
-    "description": "无已保存快照提示"
-  },
-  "operationFailed": {
-    "message": "操作失败。",
-    "description": "通用失败消息"
   }
 }

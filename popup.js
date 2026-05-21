@@ -1,6 +1,5 @@
 const CLEANUP_MODES = {
   SAFE: 'safe',
-  PERFORMANCE: 'performance',
   REMOVE: 'remove'
 };
 
@@ -39,13 +38,13 @@ async function getCurrentTab() {
 }
 
 function getSelectedMode() {
-  return document.querySelector('input[name="cleanupMode"]:checked')?.value || CLEANUP_MODES.PERFORMANCE;
+  return document.querySelector('input[name="cleanupMode"]:checked')?.value || CLEANUP_MODES.SAFE;
 }
 
 function setSelectedMode(cleanupMode) {
   const mode = Object.values(CLEANUP_MODES).includes(cleanupMode)
     ? cleanupMode
-    : CLEANUP_MODES.PERFORMANCE;
+    : CLEANUP_MODES.SAFE;
   const input = document.querySelector(`input[name="cleanupMode"][value="${mode}"]`);
   if (input) {
     input.checked = true;
@@ -61,17 +60,17 @@ function readSettingsFromForm() {
 }
 
 function resolveCleanupMode(result) {
-  if (result.cleanupMode) {
+  if (Object.values(CLEANUP_MODES).includes(result.cleanupMode)) {
     return result.cleanupMode;
   }
-  return result.collapseOldMessages === false ? CLEANUP_MODES.REMOVE : CLEANUP_MODES.PERFORMANCE;
+  return result.collapseOldMessages === false ? CLEANUP_MODES.REMOVE : CLEANUP_MODES.SAFE;
 }
 
 async function loadSettings() {
   const result = await chrome.storage.local.get({
     keepRounds: 10,
     autoMaintain: false,
-    cleanupMode: CLEANUP_MODES.PERFORMANCE,
+    cleanupMode: CLEANUP_MODES.SAFE,
     collapseOldMessages: true
   });
   document.getElementById('keepRounds').value = result.keepRounds;
@@ -158,10 +157,10 @@ function setCurrentRoundsDisplay(stats) {
   } else {
     el.textContent = '';
   }
-  updatePerformanceMetrics(stats);
+  updateViewMetrics(stats);
 }
 
-function updatePerformanceMetrics(stats) {
+function updateViewMetrics(stats) {
   const optimizedEl = document.getElementById('optimizedRounds');
   const reductionEl = document.getElementById('domReduction');
   if (!optimizedEl || !reductionEl) return;
@@ -184,9 +183,7 @@ async function saveAndNotifyIfNeeded(showModeStatus = false) {
   await notifyAutoMaintainChange(settings);
 
   if (showModeStatus) {
-    const statusKey = settings.cleanupMode === CLEANUP_MODES.PERFORMANCE
-      ? 'performanceModeSelected'
-      : settings.cleanupMode === CLEANUP_MODES.REMOVE
+    const statusKey = settings.cleanupMode === CLEANUP_MODES.REMOVE
         ? 'removeModeSelected'
         : 'safeModeSelected';
     showStatus(getMessage(statusKey), 'info');
@@ -218,10 +215,6 @@ document.getElementById('autoMaintain').addEventListener('change', async () => {
       showStatus(getMessage('autoMaintainDisabled'), 'info');
     }
   }
-});
-
-document.getElementById('openOptions').addEventListener('click', () => {
-  chrome.runtime.openOptionsPage();
 });
 
 async function checkContentScript(tabId) {

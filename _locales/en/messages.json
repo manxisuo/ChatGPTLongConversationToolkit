@@ -1,58 +1,46 @@
 {
   "extensionName": {
-    "message": "ChatGPT History Cleaner & Performance Booster",
+    "message": "ChatGPT Conversation Manager",
     "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "Speed up ChatGPT and improve long conversation experience.",
+    "message": "Control, collapse, and manage long ChatGPT conversations.",
     "description": "Extension description"
   },
   "title": {
-    "message": "ChatGPT Cleaner & Booster",
+    "message": "Conversation Manager",
     "description": "Popup title"
   },
   "subtitle": {
-    "message": "Long conversation optimizer",
+    "message": "Long conversation control",
     "description": "Popup subtitle"
   },
   "modeSectionTitle": {
-    "message": "Mode",
+    "message": "View Control",
     "description": "Cleanup mode section title"
   },
   "safeModeTitle": {
-    "message": "Safe Mode",
-    "description": "Safe mode title"
+    "message": "Visual Control",
+    "description": "Visual mode title"
   },
   "safeModeDesc": {
-    "message": "Hide old messages visually. Fast to restore, lowest risk.",
-    "description": "Safe mode description"
-  },
-  "performanceModeTitle": {
-    "message": "Performance Mode",
-    "description": "Performance mode title"
-  },
-  "performanceModeDesc": {
-    "message": "Store old messages locally, remove them from DOM, expandable.",
-    "description": "Performance mode description"
+    "message": "Hide older rounds visually. Safest and easiest to restore.",
+    "description": "Visual mode description"
   },
   "removeModeTitle": {
-    "message": "Maximum Performance",
+    "message": "Refresh Restore",
     "description": "Remove mode title"
   },
   "removeModeDesc": {
-    "message": "Discard old page nodes for the strongest reduction. Restore by refresh.",
+    "message": "Advanced: discard older rounds from this view. Refresh ChatGPT to restore.",
     "description": "Remove mode description"
   },
   "safeModeSelected": {
-    "message": "Safe mode selected: old messages stay in the page and are hidden visually.",
-    "description": "Safe mode selected status"
-  },
-  "performanceModeSelected": {
-    "message": "Performance mode selected: old messages are saved locally and removed from the DOM.",
-    "description": "Performance mode selected status"
+    "message": "Visual Control selected: older rounds stay in the page and are hidden visually.",
+    "description": "Visual mode selected status"
   },
   "removeModeSelected": {
-    "message": "Maximum Performance selected: old messages are discarded from the current page display.",
+    "message": "Refresh Restore selected: older rounds are discarded from this view and restored by refreshing ChatGPT.",
     "description": "Remove mode selected status"
   },
   "keepRoundsLabel": {
@@ -67,41 +55,28 @@
     "message": "Visible $VISIBLE$ / Total $TOTAL$ rounds",
     "description": "Popup badge showing visible and total rounds",
     "placeholders": {
-      "VISIBLE": {
-        "content": "$1",
-        "example": "10"
-      },
-      "TOTAL": {
-        "content": "$2",
-        "example": "27"
-      }
+      "VISIBLE": { "content": "$1", "example": "10" },
+      "TOTAL": { "content": "$2", "example": "27" }
     }
   },
   "optimizedRoundsLabel": {
-    "message": "Optimized",
-    "description": "Metric label for optimized rounds"
+    "message": "Hidden",
+    "description": "Metric label for hidden rounds"
   },
   "domReductionLabel": {
-    "message": "Page weight reduced",
-    "description": "Metric label for estimated DOM reduction"
+    "message": "View reduced",
+    "description": "Metric label for view reduction"
   },
   "optimizedRoundsValue": {
     "message": "$ROUNDS$ rounds",
-    "description": "Metric value for optimized rounds",
+    "description": "Metric value for hidden rounds",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "17"
-      }
+      "ROUNDS": { "content": "$1", "example": "17" }
     }
   },
   "cleanButton": {
-    "message": "Optimize current conversation",
-    "description": "Clean history button text"
-  },
-  "openSettingsButton": {
-    "message": "Settings",
-    "description": "Button to open extension settings"
+    "message": "Apply view control",
+    "description": "Apply view control button text"
   },
   "errorKeepRoundsRange": {
     "message": "Keep rounds must be between 1-100",
@@ -121,12 +96,9 @@
   },
   "successCleaned": {
     "message": "Kept the last $ROUNDS$ rounds",
-    "description": "Success message after cleaning",
+    "description": "Success message after applying view control",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "10"
-      }
+      "ROUNDS": { "content": "$1", "example": "10" }
     }
   },
   "errorOperationFailedRetry": {
@@ -142,60 +114,31 @@
     "description": "Error message when no messages found"
   },
   "infoNoNeedClean": {
-    "message": "Current conversation has only $ROUNDS$ rounds, no need to optimize",
-    "description": "Info message when no need to clean",
+    "message": "Current conversation has only $ROUNDS$ rounds, no need to hide older rounds",
+    "description": "Info message when no need to hide",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "10"
-      }
+      "ROUNDS": { "content": "$1", "example": "10" }
     }
   },
   "successCleanedDetailed": {
     "message": "Removed $REMOVED$ old rounds, kept the last $KEPT$ rounds",
-    "description": "Success message with detailed cleaning info",
+    "description": "Success message with detailed remove info",
     "placeholders": {
-      "REMOVED": {
-        "content": "$1",
-        "example": "5"
-      },
-      "KEPT": {
-        "content": "$2",
-        "example": "10"
-      }
+      "REMOVED": { "content": "$1", "example": "5" },
+      "KEPT": { "content": "$2", "example": "10" }
     }
   },
   "successCollapsedDetailed": {
     "message": "Hidden $HIDDEN$ old rounds, kept the latest $KEPT$ rounds visible",
-    "description": "Success message with detailed safe collapse info",
+    "description": "Success message with detailed visual hide info",
     "placeholders": {
-      "HIDDEN": {
-        "content": "$1",
-        "example": "42"
-      },
-      "KEPT": {
-        "content": "$2",
-        "example": "10"
-      }
-    }
-  },
-  "successPerformanceDetailed": {
-    "message": "Moved $HIDDEN$ old rounds out of the DOM, kept the latest $KEPT$ rounds visible",
-    "description": "Success message with detailed performance collapse info",
-    "placeholders": {
-      "HIDDEN": {
-        "content": "$1",
-        "example": "42"
-      },
-      "KEPT": {
-        "content": "$2",
-        "example": "10"
-      }
+      "HIDDEN": { "content": "$1", "example": "42" },
+      "KEPT": { "content": "$2", "example": "10" }
     }
   },
   "errorCleanFailed": {
-    "message": "Optimization failed: ",
-    "description": "Error message prefix for clean failure"
+    "message": "View control failed: ",
+    "description": "Error message prefix for view control failure"
   },
   "autoMaintainLabel": {
     "message": "Auto-maintain while chatting",
@@ -205,10 +148,7 @@
     "message": "Auto-maintain enabled (keeping $ROUNDS$ rounds)",
     "description": "Status message when auto-maintain is enabled",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "10"
-      }
+      "ROUNDS": { "content": "$1", "example": "10" }
     }
   },
   "autoMaintainDisabled": {
@@ -219,30 +159,14 @@
     "message": "Hidden older messages ($ROUNDS$ rounds)",
     "description": "Placeholder shown where old messages were hidden",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "42"
-      }
-    }
-  },
-  "performanceHiddenOlderMessages": {
-    "message": "Older messages stored locally and removed from DOM ($ROUNDS$ rounds)",
-    "description": "Placeholder shown where old messages were detached",
-    "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "42"
-      }
+      "ROUNDS": { "content": "$1", "example": "42" }
     }
   },
   "removedOlderMessages": {
-    "message": "Older messages optimized for maximum performance ($ROUNDS$ rounds)",
+    "message": "Older messages hidden from this view until refresh ($ROUNDS$ rounds)",
     "description": "Placeholder shown where old messages were removed",
     "placeholders": {
-      "ROUNDS": {
-        "content": "$1",
-        "example": "42"
-      }
+      "ROUNDS": { "content": "$1", "example": "42" }
     }
   },
   "expandHiddenMessages": {
@@ -253,9 +177,9 @@
     "message": "Turn off auto-maintain to expand.",
     "description": "Hint shown when auto-maintain disables placeholder expansion"
   },
-  "snapshotRestoreFailed": {
-    "message": "Unable to restore saved messages. Refresh the page to reload the full conversation.",
-    "description": "Performance mode snapshot restore failure"
+  "expandHiddenMessagesFailed": {
+    "message": "Unable to expand hidden messages. Refresh the page and try again.",
+    "description": "Restore failure message"
   },
   "domWarningTitle": {
     "message": "ChatGPT page structure may have changed - extension cannot detect conversations",
@@ -269,106 +193,8 @@
     "message": "Current conversation: $VISIBLE$ visible / $TOTAL$ total rounds",
     "description": "Tooltip for the extension icon badge",
     "placeholders": {
-      "VISIBLE": {
-        "content": "$1",
-        "example": "10"
-      },
-      "TOTAL": {
-        "content": "$2",
-        "example": "27"
-      }
+      "VISIBLE": { "content": "$1", "example": "10" },
+      "TOTAL": { "content": "$2", "example": "27" }
     }
-  },
-  "optionsTitle": {
-    "message": "Settings",
-    "description": "Options page title"
-  },
-  "optionsSubtitle": {
-    "message": "Manage local Performance mode snapshots.",
-    "description": "Options page subtitle"
-  },
-  "snapshotStorageTitle": {
-    "message": "Local snapshots",
-    "description": "Snapshot storage section title"
-  },
-  "snapshotStorageDesc": {
-    "message": "Performance mode stores hidden messages locally in this browser only. These snapshots never leave your device.",
-    "description": "Snapshot storage description"
-  },
-  "snapshotTtlLabel": {
-    "message": "Keep snapshots for",
-    "description": "TTL setting label"
-  },
-  "daysUnit": {
-    "message": "days",
-    "description": "Days unit"
-  },
-  "saveSettingsButton": {
-    "message": "Save settings",
-    "description": "Save settings button"
-  },
-  "cleanupExpiredButton": {
-    "message": "Clean expired snapshots",
-    "description": "Cleanup expired snapshots button"
-  },
-  "clearSnapshotsButton": {
-    "message": "Clear local snapshots",
-    "description": "Clear snapshots button"
-  },
-  "snapshotStatsText": {
-    "message": "Saved conversations: $CONVERSATIONS$ | Saved rounds: $ROUNDS$ | Saved turns: $TURNS$",
-    "description": "Snapshot storage stats",
-    "placeholders": {
-      "CONVERSATIONS": { "content": "$1", "example": "2" },
-      "ROUNDS": { "content": "$2", "example": "18" },
-      "TURNS": { "content": "$3", "example": "36" }
-    }
-  },
-  "snapshotTtlRangeError": {
-    "message": "Snapshot retention must be between 1 and 365 days.",
-    "description": "TTL validation error"
-  },
-  "settingsSaved": {
-    "message": "Settings saved.",
-    "description": "Settings saved status"
-  },
-  "expiredSnapshotsCleaned": {
-    "message": "Cleaned $COUNT$ expired conversation snapshots.",
-    "description": "Expired cleanup status",
-    "placeholders": {
-      "COUNT": { "content": "$1", "example": "3" }
-    }
-  },
-  "clearSnapshotsConfirm": {
-    "message": "Clear all local Performance mode snapshots? This cannot be undone.",
-    "description": "Confirm clear snapshots"
-  },
-  "snapshotsCleared": {
-    "message": "Local snapshots cleared.",
-    "description": "Snapshots cleared status"
-  },
-  "snapshotTestTitle": {
-    "message": "Snapshot test viewer",
-    "description": "Snapshot test viewer section title"
-  },
-  "snapshotTestDesc": {
-    "message": "Inspect locally saved Performance mode snapshots by conversation ID.",
-    "description": "Snapshot test viewer description"
-  },
-  "refreshSnapshotsButton": {
-    "message": "Refresh snapshot list",
-    "description": "Refresh snapshot list button"
-  },
-  "loadingSnapshots": {
-    "message": "Loading snapshots...",
-    "description": "Loading snapshots message"
-  },
-  "noSavedSnapshots": {
-    "message": "No saved conversation snapshots.",
-    "description": "No saved snapshots message"
-  },
-  "operationFailed": {
-    "message": "Operation failed.",
-    "description": "Generic failure message"
   }
 }

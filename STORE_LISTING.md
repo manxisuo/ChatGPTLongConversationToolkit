@@ -2,37 +2,39 @@
 
 ## Title
 
-ChatGPT History Cleaner & Performance Booster
+ChatGPT Conversation Manager
 
 ## Short Description
 
-Speed up ChatGPT and improve long conversation experience.
+Control long ChatGPT conversations and keep recent rounds easy to scan.
 
 ## English Description
 
-Speed up ChatGPT and improve long conversation experience.
+Make long ChatGPT conversations easier to control.
 
 Features:
 
-- Keep only recent conversation rounds
-- Reduce lag in long chats
-- Choose Safe Mode, Performance Mode, or Maximum Performance
-- Improve browser performance
-- Make long ChatGPT sessions smoother
+- Keep only recent conversation rounds visible
+- Hide older rounds visually
+- Expand hidden rounds when needed
+- Auto-maintain a visible round limit while chatting
+- Reduce visual clutter in long sessions
+- No backend, tracking, analytics, or conversation upload
 
 ## Chinese Description
 
 优化 ChatGPT 长对话体验。
 
-- 保留最近 N 轮对话
-- 减少长会话卡顿
-- 支持安全模式、性能模式、极致性能模式
-- 提升页面响应速度
-- 让长时间使用更流畅
+- 仅保留最近 N 轮对话可见
+- 在视觉上隐藏旧轮次
+- 需要时可展开隐藏内容
+- 对话中可自动保持可见轮数上限
+- 减少长会话中的视觉负担
+- 无后端、无追踪、无统计、不会上传对话内容
 
 ## Promotional Screenshot Copy
 
-- Reduce lag in long conversations
-- Smooth ChatGPT experience
-- Safe / Performance / Maximum Performance modes
-- Keep only recent N rounds
+- Control Long ChatGPT Conversations
+- Keep Recent Rounds Visible
+- Hide Older Rounds Safely
+- Expand When Needed
