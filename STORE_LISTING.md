@@ -2,11 +2,11 @@
 
 ## Title
 
-ChatGPT Conversation Toolkit
+ChatGPT Long Conversation Toolkit
 
 ## Short Description
 
-Control long ChatGPT conversations and keep recent rounds easy to scan.
+Control long ChatGPT conversations and keep recent exchanges easy to scan.
 
 ## English Description
 
@@ -42,27 +42,11 @@ Long conversation management has been improved.
 
 What's new:
 
-- Cleaner and safer conversation controls
-- Current conversation status panel
-- Better long-conversation experience
-- Original conversation cleanup workflow remains available
-- Kept Refresh Restore as an advanced option
-- Removed unreliable Local Snapshot mode
-- Added local-only future tool interests
-- Updated copy away from performance claims
-
-## Promotional Screenshot Copy
-
-- Control Long ChatGPT Conversations
-- Keep Recent Rounds Visible
-- Hide Older Rounds Safely
-- Expand When Needed
-- Local-first, No Upload
-- Mark Future Tool Interests
-
-## Screenshot Plan
-
-1. Popup overview: Long Conversation Control, Visual Control, Refresh Restore, keep recent rounds.
-2. Applied state: hidden older rounds placeholder with Expand.
-3. Auto-maintain: visible round limit while chatting.
-4. Privacy: local-only, no upload, no analytics.
+- Cleaner controls for long ChatGPT conversations
+- Current view status panel with visible and hidden exchange counts
+- Visual Hide mode: lowest risk, expandable in place
+- Temporary Trim mode: strongest page reduction, restored by refreshing ChatGPT
+- Optional auto-maintain for keeping recent exchanges visible while chatting
+- New feedback entry for user-submitted feature suggestions
+- Local-first privacy positioning: no backend, no tracking, no analytics, and no conversation upload
+- Updated copy from "rounds" to "exchanges" for clearer wording

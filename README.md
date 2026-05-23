@@ -1,15 +1,15 @@
-# ChatGPT Conversation Toolkit
+# ChatGPT Long Conversation Toolkit
 
 A lightweight Chrome and Edge extension for making long ChatGPT conversations easier to control and revisit.
 
-The extension keeps the latest N conversation rounds visible and can hide older messages behind a small expandable placeholder. It only changes the current page display. It does not delete ChatGPT account data or upload conversation content.
+The extension keeps the latest N conversation exchanges visible and can hide older messages behind a small expandable placeholder. It only changes the current page display. It does not delete ChatGPT account data or upload conversation content.
 
 ## Current Focus
 
 Long Conversation Experience:
 
-- Keep recent conversation rounds visible
-- Hide older rounds visually when a conversation becomes hard to scan
+- Keep recent conversation exchanges visible
+- Hide older exchanges visually when a conversation becomes hard to scan
 - Optionally discard older page nodes until refresh
 - Stay local, lightweight, and privacy-first
 
@@ -17,11 +17,11 @@ The extension no longer treats performance cleanup as the core product promise. 
 
 ## Features
 
-- Configurable recent-round limit, defaulting to 10 rounds
-- Visual Control: hide older messages visually and expand them in place
-- Refresh Restore: discard older page nodes from the current view; refresh ChatGPT to restore the full conversation
+- Configurable recent-exchange limit, defaulting to 10 exchanges
+- Visual Hide: lowest risk, expandable in place
+- Temporary Trim: strongest page reduction, restored by refreshing ChatGPT
 - Optional auto-maintain mode for long sessions
-- Conversation round count badge
+- Conversation exchange count badge
 - English and Simplified Chinese UI
 
 ## Privacy
@@ -53,13 +53,13 @@ All behavior runs locally in the browser page. The extension does not store conv
 
 1. Open a ChatGPT conversation on `chatgpt.com` or `chat.openai.com`
 2. Click the extension icon
-3. Set how many recent rounds to keep visible
+3. Set how many recent exchanges to keep visible
 4. Choose a mode:
-   - Visual Control: lowest risk, expandable in place
-   - Refresh Restore: strongest page reduction, restored by refreshing ChatGPT
+   - Visual Hide: lowest risk, expandable in place
+   - Temporary Trim: strongest page reduction, restored by refreshing ChatGPT
 5. Click Apply view control
 
-Visual Control shows an expandable placeholder for older messages. Refresh Restore leaves a non-expandable placeholder.
+Visual Hide shows an expandable placeholder for older messages. Temporary Trim leaves a non-expandable placeholder.
 
 ## Roadmap Principle
 
