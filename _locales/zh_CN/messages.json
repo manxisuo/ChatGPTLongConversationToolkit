@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ChatGPT 对话管理器",
+    "message": "ChatGPT 长对话工具箱",
     "description": "扩展名称"
   },
   "extensionDescription": {
@@ -8,7 +8,7 @@
     "description": "扩展描述"
   },
   "title": {
-    "message": "ChatGPT 对话管理",
+    "message": "ChatGPT 长对话工具箱",
     "description": "弹窗标题"
   },
   "subtitle": {
@@ -183,56 +183,29 @@
     "message": "已关闭自动保持",
     "description": "自动保持关闭时的状态消息"
   },
-  "nextFeatureTitle": {
-    "message": "我感兴趣的能力",
-    "description": "功能兴趣区域标题"
+  "featureFeedbackTitle": {
+    "message": "💡 功能建议",
+    "description": "功能反馈问卷入口标题"
   },
-  "nextFeatureSearch": {
-    "message": "搜索消息",
-    "description": "搜索功能兴趣选项"
+  "featureFeedbackSubtitle": {
+    "message": "告诉我们你最想要的功能",
+    "description": "功能反馈问卷入口副标题"
   },
-  "nextFeatureOutline": {
-    "message": "自动生成大纲",
-    "description": "大纲功能兴趣选项"
+  "featureFeedbackSubmit": {
+    "message": "提交建议",
+    "description": "功能反馈问卷入口提交操作"
   },
-  "nextFeatureNavigation": {
-    "message": "对话导航",
-    "description": "导航功能兴趣选项"
+  "featureFeedbackDone": {
+    "message": "我已反馈",
+    "description": "功能反馈问卷入口完成操作"
   },
-  "nextFeatureCodeFolding": {
-    "message": "折叠代码块",
-    "description": "代码折叠功能兴趣选项"
+  "featureFeedbackDoneConfirm": {
+    "message": "已完成反馈？以后将不再显示此入口",
+    "description": "永久隐藏反馈入口前的确认提示"
   },
-  "nextFeatureImageFolding": {
-    "message": "折叠图片",
-    "description": "图片折叠功能兴趣选项"
-  },
-  "nextFeatureNote": {
-    "message": "仅用于记录你的偏好，只保存在此浏览器本地。",
-    "description": "功能兴趣隐私提示"
-  },
-  "nextFeatureSave": {
-    "message": "保存关注",
-    "description": "保存未来能力兴趣按钮"
-  },
-  "nextFeatureEdit": {
-    "message": "修改",
-    "description": "修改已保存未来能力兴趣按钮"
-  },
-  "nextFeatureNone": {
-    "message": "尚未标记关注",
-    "description": "已保存未来能力兴趣空状态"
-  },
-  "nextFeatureProgress": {
-    "message": "已上线：0 / $COUNT$",
-    "description": "已保存未来能力兴趣进度文本",
-    "placeholders": {
-      "COUNT": { "content": "$1", "example": "2" }
-    }
-  },
-  "nextFeatureSaved": {
-    "message": "偏好已保存在本地",
-    "description": "保存功能兴趣后的状态消息"
+  "featureFeedbackPrivacy": {
+    "message": "不会收集聊天内容",
+    "description": "功能反馈问卷入口中的隐私提示"
   },
   "panelButton": {
     "message": "对话",

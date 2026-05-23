@@ -60,7 +60,7 @@
           <input type="radio" name="cleanupMode" value="remove" />
           <span class="mode-content">
             <span class="mode-title" data-i18n="removeModeTitle">Refresh Restore</span>
-            <span class="mode-desc" data-i18n="removeModeDesc">Advanced: discard older rounds from this view. Refresh ChatGPT to restore.</span>
+            <span class="mode-desc" data-i18n="removeModeDesc">Advanced: discard older exchanges from this view. Refresh ChatGPT to restore.</span>
           </span>
         </label>
       </div>
@@ -68,9 +68,9 @@
 
     <section class="settings-section compact">
       <div class="rounds-row">
-        <label for="keepRounds" data-i18n="keepRoundsLabel">Keep only recent:</label>
+        <label for="keepRounds" data-i18n="keepRoundsLabel">Keep recent:</label>
         <input type="number" id="keepRounds" min="1" max="100" value="10" />
-        <span class="input-hint" data-i18n="roundsUnit">rounds</span>
+        <span class="input-hint" data-i18n="roundsUnit">exchanges</span>
 
         <label class="checkbox-label inline-checkbox">
           <input type="checkbox" id="autoMaintain" />
@@ -80,40 +80,14 @@
     </section>
 
     <section class="settings-section feedback-section">
-      <div class="section-label" data-i18n="nextFeatureTitle">What do you want next?</div>
-      <div id="featureInterestEditor">
-        <div class="feedback-grid" aria-label="Feature interests">
-          <label class="interest-option">
-            <input type="checkbox" name="nextFeatureInterest" value="search" />
-            <span data-i18n="nextFeatureSearch">Search</span>
-          </label>
-          <label class="interest-option">
-            <input type="checkbox" name="nextFeatureInterest" value="outline" />
-            <span data-i18n="nextFeatureOutline">Outline</span>
-          </label>
-          <label class="interest-option">
-            <input type="checkbox" name="nextFeatureInterest" value="navigation" />
-            <span data-i18n="nextFeatureNavigation">Navigation</span>
-          </label>
-          <label class="interest-option">
-            <input type="checkbox" name="nextFeatureInterest" value="codeFolding" />
-            <span data-i18n="nextFeatureCodeFolding">Code folding</span>
-          </label>
-          <label class="interest-option">
-            <input type="checkbox" name="nextFeatureInterest" value="imageFolding" />
-            <span data-i18n="nextFeatureImageFolding">Image folding</span>
-          </label>
+      <div id="featureFeedbackPanel" class="feature-feedback-panel" hidden>
+        <span class="feature-feedback-title" data-i18n="featureFeedbackTitle">💡 Suggest features</span>
+        <span class="feature-feedback-subtitle" data-i18n="featureFeedbackSubtitle">Help shape future updates</span>
+        <div class="feature-feedback-actions">
+          <button id="featureFeedbackSubmit" type="button" class="feature-feedback-primary" data-i18n="featureFeedbackSubmit">Give Feedback</button>
+          <button id="featureFeedbackDone" type="button" class="feature-feedback-secondary" data-i18n="featureFeedbackDone">Already gave feedback</button>
         </div>
-        <button id="saveFeatureInterests" type="button" class="link-button" data-i18n="nextFeatureSave">Save interests</button>
-        <p class="feedback-note" data-i18n="nextFeatureNote">Saved locally on this browser.</p>
-      </div>
-
-      <div id="featureInterestSummary" class="interest-summary" hidden>
-        <div>
-          <div id="featureInterestSummaryList" class="interest-summary-list"></div>
-          <p id="featureInterestProgress" class="feedback-note"></p>
-        </div>
-        <button id="editFeatureInterests" type="button" class="link-button" data-i18n="nextFeatureEdit">Edit</button>
+        <span class="feature-feedback-privacy" data-i18n="featureFeedbackPrivacy">We do not collect chat content</span>
       </div>
     </section>
 

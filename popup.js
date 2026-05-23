@@ -3,13 +3,12 @@ const CLEANUP_MODES = {
   REMOVE: 'remove'
 };
 
-const FEATURE_INTERESTS = [
-  { value: 'search', labelKey: 'nextFeatureSearch' },
-  { value: 'outline', labelKey: 'nextFeatureOutline' },
-  { value: 'navigation', labelKey: 'nextFeatureNavigation' },
-  { value: 'codeFolding', labelKey: 'nextFeatureCodeFolding' },
-  { value: 'imageFolding', labelKey: 'nextFeatureImageFolding' }
-];
+const FEEDBACK_SURVEY_URLS = {
+  zh: 'https://tally.so/r/ZjZYAv',
+  en: 'https://tally.so/r/2EDLp9'
+};
+let isV130IntroVisible = false;
+let isFeatureFeedbackCompleted = false;
 
 function getMessage(key, substitutions = []) {
   return chrome.i18n.getMessage(key, substitutions);
@@ -59,59 +58,11 @@ function setSelectedMode(cleanupMode) {
   }
 }
 
-function readFeatureInterestsFromForm() {
-  const interests = {};
-  document.querySelectorAll('input[name="nextFeatureInterest"]').forEach((input) => {
-    interests[input.value] = input.checked;
-  });
-  return interests;
-}
-
-function setFeatureInterests(interests = {}) {
-  document.querySelectorAll('input[name="nextFeatureInterest"]').forEach((input) => {
-    input.checked = Boolean(interests[input.value]);
-  });
-}
-
-function getSelectedFeatureInterests(interests = readFeatureInterestsFromForm()) {
-  return FEATURE_INTERESTS.filter((option) => interests[option.value]);
-}
-
-function renderFeatureInterestState(interests = readFeatureInterestsFromForm(), saved = false) {
-  const editor = document.getElementById('featureInterestEditor');
-  const summary = document.getElementById('featureInterestSummary');
-  const list = document.getElementById('featureInterestSummaryList');
-  const progress = document.getElementById('featureInterestProgress');
-  if (!editor || !summary || !list || !progress) return;
-
-  editor.hidden = saved;
-  summary.hidden = !saved;
-  if (!saved) return;
-
-  const selected = getSelectedFeatureInterests(interests);
-  list.textContent = '';
-  if (selected.length === 0) {
-    const empty = document.createElement('span');
-    empty.className = 'interest-chip';
-    empty.textContent = getMessage('nextFeatureNone');
-    list.appendChild(empty);
-  } else {
-    selected.forEach((option) => {
-      const chip = document.createElement('span');
-      chip.className = 'interest-chip';
-      chip.textContent = getMessage(option.labelKey);
-      list.appendChild(chip);
-    });
-  }
-  progress.textContent = getMessage('nextFeatureProgress', [String(selected.length)]);
-}
-
 function readSettingsFromForm() {
   return {
     keepRounds: parseInt(document.getElementById('keepRounds').value, 10),
     autoMaintain: document.getElementById('autoMaintain').checked,
-    cleanupMode: getSelectedMode(),
-    nextFeatureInterests: readFeatureInterestsFromForm()
+    cleanupMode: getSelectedMode()
   };
 }
 
@@ -128,23 +79,64 @@ async function loadSettings() {
     autoMaintain: false,
     cleanupMode: CLEANUP_MODES.SAFE,
     collapseOldMessages: true,
-    nextFeatureInterests: {},
-    nextFeatureInterestsSaved: false,
     showV130Intro: false
   });
   document.getElementById('keepRounds').value = result.keepRounds;
   document.getElementById('autoMaintain').checked = result.autoMaintain;
   setSelectedMode(resolveCleanupMode(result));
-  setFeatureInterests(result.nextFeatureInterests);
-  renderFeatureInterestState(result.nextFeatureInterests, result.nextFeatureInterestsSaved);
   renderV130Intro(result.showV130Intro);
 }
 
 function renderV130Intro(showIntro) {
+  isV130IntroVisible = Boolean(showIntro);
   const intro = document.getElementById('v130Intro');
-  const feedback = document.querySelector('.feedback-section');
   if (intro) intro.hidden = !showIntro;
-  if (feedback) feedback.hidden = Boolean(showIntro);
+  renderFeedbackSectionVisibility();
+}
+
+function renderFeedbackSectionVisibility() {
+  const feedback = document.querySelector('.feedback-section');
+  if (feedback) {
+    feedback.hidden = isV130IntroVisible || isFeatureFeedbackCompleted;
+  }
+}
+
+function getUILanguage() {
+  if (chrome.i18n?.getUILanguage) {
+    return chrome.i18n.getUILanguage();
+  }
+  return navigator.language || '';
+}
+
+function getFeedbackSurveyUrl() {
+  const lang = getUILanguage();
+  return lang.startsWith('zh') ? FEEDBACK_SURVEY_URLS.zh : FEEDBACK_SURVEY_URLS.en;
+}
+
+function renderFeatureFeedbackPanel(feedbackCompleted = false) {
+  const panel = document.getElementById('featureFeedbackPanel');
+  if (!panel) return;
+
+  isFeatureFeedbackCompleted = Boolean(feedbackCompleted);
+  panel.hidden = isFeatureFeedbackCompleted;
+  renderFeedbackSectionVisibility();
+}
+
+async function loadFeatureFeedbackState() {
+  const result = await chrome.storage.local.get({ feedbackCompleted: false });
+  renderFeatureFeedbackPanel(result.feedbackCompleted);
+}
+
+async function openFeatureFeedbackSurvey() {
+  await chrome.tabs.create({ url: getFeedbackSurveyUrl() });
+}
+
+async function markFeatureFeedbackCompleted() {
+  if (!confirm(getMessage('featureFeedbackDoneConfirm'))) {
+    return;
+  }
+  await chrome.storage.local.set({ feedbackCompleted: true });
+  renderFeatureFeedbackPanel(true);
 }
 
 async function saveSettings() {
@@ -161,16 +153,6 @@ async function saveSettings() {
     collapseOldMessages: settings.cleanupMode !== CLEANUP_MODES.REMOVE
   });
   return settings;
-}
-
-async function saveFeatureInterests() {
-  const interests = readFeatureInterestsFromForm();
-  await chrome.storage.local.set({
-    nextFeatureInterests: interests,
-    nextFeatureInterestsSaved: true
-  });
-  renderFeatureInterestState(interests, true);
-  showStatus(getMessage('nextFeatureSaved'), 'success');
 }
 
 async function notifyAutoMaintainChange(settings = readSettingsFromForm()) {
@@ -197,6 +179,7 @@ async function notifyAutoMaintainChange(settings = readSettingsFromForm()) {
 }
 
 loadSettings();
+loadFeatureFeedbackState();
 
 async function loadCurrentRounds() {
   try {
@@ -288,11 +271,8 @@ document.getElementById('autoMaintain').addEventListener('change', async () => {
   }
 });
 
-document.getElementById('saveFeatureInterests').addEventListener('click', saveFeatureInterests);
-
-document.getElementById('editFeatureInterests').addEventListener('click', () => {
-  renderFeatureInterestState(readFeatureInterestsFromForm(), false);
-});
+document.getElementById('featureFeedbackSubmit').addEventListener('click', openFeatureFeedbackSurvey);
+document.getElementById('featureFeedbackDone').addEventListener('click', markFeatureFeedbackCompleted);
 
 document.getElementById('dismissV130Intro').addEventListener('click', async () => {
   await chrome.storage.local.set({ showV130Intro: false });

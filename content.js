@@ -87,7 +87,47 @@ function detectTurnRole(turnEl) {
   const roleEl = turnEl.querySelector('[data-message-author-role]');
   const role = roleEl?.getAttribute('data-message-author-role');
   if (role === 'user' || role === 'assistant' || role === 'system') return role;
+
+  const testId = turnEl.getAttribute('data-testid') || '';
+  const testIdMatch = testId.match(/conversation-turn-(\d+)/);
+  if (testIdMatch) {
+    const turnNumber = parseInt(testIdMatch[1], 10);
+    if (!Number.isNaN(turnNumber)) {
+      return turnNumber % 2 === 1 ? 'user' : 'assistant';
+    }
+  }
+
   return 'unknown';
+}
+
+function buildConversationRounds(turns) {
+  const rounds = [];
+  let currentRound = null;
+
+  turns.forEach((turn) => {
+    const role = detectTurnRole(turn);
+    if (role === 'user' || !currentRound) {
+      currentRound = [turn];
+      rounds.push(currentRound);
+      return;
+    }
+    currentRound.push(turn);
+  });
+
+  return rounds;
+}
+
+function countConversationRounds(turns) {
+  return buildConversationRounds(turns).length;
+}
+
+function flattenRounds(rounds) {
+  return rounds.reduce((allTurns, round) => allTurns.concat(round), []);
+}
+
+function sortTurnsByPageOrder(turns) {
+  const order = new Map(findTurnElements().map((turn, index) => [turn, index]));
+  return turns.slice().sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
 }
 
 function getTurnText(turnEl) {
@@ -142,14 +182,6 @@ function buildMessageExtractor() {
   }).filter((message) => message.text || message.markers.headings.length || message.markers.codeMarkers.length || message.markers.imageCount);
 }
 
-function calculateRounds(turnCount) {
-  return Math.floor(turnCount / 2);
-}
-
-function toWholeRoundTurnCount(turnCount) {
-  return Math.max(0, turnCount - (turnCount % 2));
-}
-
 function getExistingPlaceholders() {
   return Array.from(document.querySelectorAll('[data-chc-placeholder="true"]'));
 }
@@ -169,11 +201,33 @@ function getPlaceholderHiddenRounds() {
 }
 
 function getRoundStats() {
-  const visibleRounds = calculateRounds(getVisibleTurnElements().length);
+  const visibleRounds = countConversationRounds(getVisibleTurnElements());
   return {
     visibleRounds,
     totalRounds: visibleRounds + getPlaceholderHiddenRounds()
   };
+}
+
+function getTurnSelector() {
+  return 'section[data-testid^="conversation-turn-"][data-turn-id], article';
+}
+
+function getSafeTurnLayoutElement(turnEl) {
+  const thread = findThread();
+  if (!thread || !turnEl || !thread.contains(turnEl)) return turnEl;
+
+  const parent = turnEl.parentElement;
+  if (!parent || parent === thread || !thread.contains(parent)) return turnEl;
+
+  const siblingTurns = Array.from(parent.querySelectorAll(getTurnSelector()))
+    .filter((candidate) => !candidate.dataset.chcPlaceholder);
+  const hasComposerLikeContent = parent.querySelector('textarea, [contenteditable="true"], form');
+
+  if (siblingTurns.length === 1 && siblingTurns[0] === turnEl && !hasComposerLikeContent) {
+    return parent;
+  }
+
+  return turnEl;
 }
 
 function showTurn(turnEl) {
@@ -181,12 +235,34 @@ function showTurn(turnEl) {
   turnEl.dataset.chcRestoredVisual = 'true';
   turnEl.style.removeProperty('display');
   turnEl.style.overflowAnchor = 'none';
+
+  const layoutEl = getSafeTurnLayoutElement(turnEl);
+  if (layoutEl && layoutEl !== turnEl && layoutEl.dataset.chcHiddenLayout === 'true') {
+    delete layoutEl.dataset.chcHiddenLayout;
+    layoutEl.style.removeProperty('display');
+    layoutEl.style.overflowAnchor = 'none';
+  }
 }
 
 function hideTurn(turnEl) {
   turnEl.dataset.chcHidden = 'true';
   turnEl.style.display = 'none';
   turnEl.style.overflowAnchor = 'none';
+
+  const layoutEl = getSafeTurnLayoutElement(turnEl);
+  if (layoutEl && layoutEl !== turnEl) {
+    layoutEl.dataset.chcHiddenLayout = 'true';
+    layoutEl.style.display = 'none';
+    layoutEl.style.overflowAnchor = 'none';
+  }
+}
+
+function clearHiddenLayoutContainers() {
+  document.querySelectorAll('[data-chc-hidden-layout="true"]').forEach((layoutEl) => {
+    delete layoutEl.dataset.chcHiddenLayout;
+    layoutEl.style.removeProperty('display');
+    layoutEl.style.overflowAnchor = 'none';
+  });
 }
 
 function getScrollRoot() {
@@ -271,16 +347,16 @@ function hideRestoredControls(root) {
   });
 }
 
-function setPlaceholderContent(placeholder, { mode, hiddenTurns }) {
-  const hiddenRounds = calculateRounds(hiddenTurns);
+function setPlaceholderContent(placeholder, { mode, hiddenTurns, hiddenRounds }) {
+  const hiddenRoundCount = hiddenRounds ?? (parseInt(placeholder.dataset.chcHiddenRounds || '0', 10) || Math.ceil(hiddenTurns / 2));
   const canExpand = mode !== CLEANUP_MODES.REMOVE && !autoMaintainEnabled && hiddenTurns > 0;
   const modeLabelKey = mode === CLEANUP_MODES.REMOVE
       ? 'removedOlderMessages'
       : 'hiddenOlderMessages';
 
   placeholder.dataset.chcHiddenTurns = String(hiddenTurns);
-  placeholder.dataset.chcHiddenRounds = String(hiddenRounds);
-  placeholder.textContent = getMessage(modeLabelKey, [hiddenRounds.toString()]);
+  placeholder.dataset.chcHiddenRounds = String(hiddenRoundCount);
+  placeholder.textContent = getMessage(modeLabelKey, [hiddenRoundCount.toString()]);
 
   if (canExpand) {
     const expand = document.createElement('span');
@@ -308,7 +384,7 @@ function setPlaceholderContent(placeholder, { mode, hiddenTurns }) {
   bindPlaceholderExpandHandlers(placeholder, canExpand);
 }
 
-function createPlaceholder({ mode, hiddenTurns }) {
+function createPlaceholder({ mode, hiddenTurns, hiddenRounds }) {
   const placeholder = document.createElement('section');
   placeholder.dataset.chcPlaceholder = 'true';
   placeholder.dataset.chcMode = mode;
@@ -327,18 +403,18 @@ function createPlaceholder({ mode, hiddenTurns }) {
     textAlign: 'center'
   });
 
-  setPlaceholderContent(placeholder, { mode, hiddenTurns });
+  setPlaceholderContent(placeholder, { mode, hiddenTurns, hiddenRounds });
   return placeholder;
 }
 
-function ensurePlaceholder({ mode, hiddenTurns, beforeTurn }) {
+function ensurePlaceholder({ mode, hiddenTurns, hiddenRounds, beforeTurn }) {
   let placeholder = getPlaceholderForMode(mode);
   if (!placeholder) {
-    placeholder = createPlaceholder({ mode, hiddenTurns });
+    placeholder = createPlaceholder({ mode, hiddenTurns, hiddenRounds });
     const parent = beforeTurn?.parentNode || findThread();
     if (parent) parent.insertBefore(placeholder, beforeTurn || parent.firstChild);
   }
-  setPlaceholderContent(placeholder, { mode, hiddenTurns });
+  setPlaceholderContent(placeholder, { mode, hiddenTurns, hiddenRounds });
   return placeholder;
 }
 
@@ -367,7 +443,8 @@ function refreshPlaceholderInteractivity() {
   getExistingPlaceholders().forEach((placeholder) => {
     setPlaceholderContent(placeholder, {
       mode: placeholder.dataset.chcMode,
-      hiddenTurns: getPlaceholderHiddenTurns(placeholder)
+      hiddenTurns: getPlaceholderHiddenTurns(placeholder),
+      hiddenRounds: parseInt(placeholder.dataset.chcHiddenRounds || '0', 10) || 0
     });
   });
 }
@@ -401,15 +478,22 @@ class SafeDomStore {
   async store(turns) {
     if (turns.length === 0) return this.hiddenCount();
     const firstHiddenTurn = turns[0] || null;
+    const beforeTurn = getSafeTurnLayoutElement(firstHiddenTurn) || firstHiddenTurn;
+    const nextHiddenTurns = sortTurnsByPageOrder([...this.hiddenTurns(), ...turns]);
     const placeholder = ensurePlaceholder({
       mode: this.mode,
-      hiddenTurns: this.hiddenCount() + turns.length,
-      beforeTurn: firstHiddenTurn
+      hiddenTurns: nextHiddenTurns.length,
+      hiddenRounds: countConversationRounds(nextHiddenTurns),
+      beforeTurn
     });
     turns.forEach((turn) => {
       hideTurn(turn);
     });
-    setPlaceholderContent(placeholder, { mode: this.mode, hiddenTurns: this.hiddenCount() });
+    setPlaceholderContent(placeholder, {
+      mode: this.mode,
+      hiddenTurns: this.hiddenCount(),
+      hiddenRounds: countConversationRounds(this.hiddenTurns())
+    });
     return this.hiddenCount();
   }
 
@@ -432,7 +516,11 @@ class SafeDomStore {
     if (hiddenCount === 0) {
       placeholder.remove();
     } else {
-      setPlaceholderContent(placeholder, { mode: this.mode, hiddenTurns: hiddenCount });
+      setPlaceholderContent(placeholder, {
+        mode: this.mode,
+        hiddenTurns: hiddenCount,
+        hiddenRounds: countConversationRounds(this.hiddenTurns())
+      });
     }
     return hiddenCount;
   }
@@ -451,9 +539,11 @@ class NullStore {
     if (turns.length === 0) return this.hiddenCount();
     const firstKeptTurn = getVisibleTurnElements()[turns.length] || null;
     const hiddenTurns = this.hiddenCount() + turns.length;
+    const hiddenRounds = getPlaceholderHiddenRounds() + countConversationRounds(turns);
     ensurePlaceholder({
       mode: this.mode,
       hiddenTurns,
+      hiddenRounds,
       beforeTurn: firstKeptTurn
     });
     turns.forEach(turn => turn.remove());
@@ -493,20 +583,27 @@ async function reconcileConversationUnlocked(keepRounds, cleanupMode) {
   const store = createStore(mode);
   const hiddenCount = await store.hiddenCount();
   const visibleTurns = getVisibleTurnElements();
-  const targetVisibleTurns = keepRounds * 2;
-  if (visibleTurns.length > targetVisibleTurns) {
-    const turnsToStoreCount = toWholeRoundTurnCount(visibleTurns.length - targetVisibleTurns);
-    const turnsToStore = visibleTurns.slice(0, turnsToStoreCount);
+  const visibleRounds = buildConversationRounds(visibleTurns);
+  if (visibleRounds.length > keepRounds) {
+    const turnsToStore = flattenRounds(visibleRounds.slice(0, visibleRounds.length - keepRounds));
     await store.store(turnsToStore);
-  } else if (visibleTurns.length < targetVisibleTurns && hiddenCount > 0) {
-    const turnsToRestore = toWholeRoundTurnCount(Math.min(targetVisibleTurns - visibleTurns.length, hiddenCount));
-    await store.restore(turnsToRestore);
+  } else if (visibleRounds.length < keepRounds && hiddenCount > 0 && typeof store.hiddenTurns === 'function') {
+    const hiddenRounds = buildConversationRounds(store.hiddenTurns());
+    const roundsToRestore = hiddenRounds.slice(-(keepRounds - visibleRounds.length));
+    await store.restore(flattenRounds(roundsToRestore).length);
   } else {
     const placeholder = getPlaceholderForMode(mode);
     if (placeholder) {
       const currentHiddenCount = await store.hiddenCount();
       if (currentHiddenCount > 0) {
-        setPlaceholderContent(placeholder, { mode, hiddenTurns: currentHiddenCount });
+        const currentHiddenTurns = typeof store.hiddenTurns === 'function' ? store.hiddenTurns() : [];
+        setPlaceholderContent(placeholder, {
+          mode,
+          hiddenTurns: currentHiddenCount,
+          hiddenRounds: currentHiddenTurns.length > 0
+            ? countConversationRounds(currentHiddenTurns)
+            : getPlaceholderHiddenRounds()
+        });
       } else {
         placeholder.remove();
       }
@@ -1325,6 +1422,7 @@ function resolveCleanupMode(result) {
 
 async function initAutoMaintain() {
   try {
+    clearHiddenLayoutContainers();
     const result = await chrome.storage.local.get({
       autoMaintain: false,
       keepRounds: 10,

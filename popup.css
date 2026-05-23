@@ -9,7 +9,7 @@
 }
 
 body {
-  width: 380px;
+  width: 420px;
   min-height: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: #f5f7fb;
@@ -260,57 +260,78 @@ h1 {
   padding-bottom: 7px;
 }
 
-.feedback-grid {
+.feature-feedback-panel {
+  align-items: flex-start;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  color: #111827;
   display: grid;
-  gap: 5px;
-  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  padding: 8px 9px;
+  text-align: left;
+  width: 100%;
 }
 
-.interest-option {
-  align-items: center;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 7px;
-  color: #374151;
-  cursor: pointer;
-  display: flex;
-  font-size: 11px;
-  font-weight: 600;
-  gap: 5px;
-  min-height: 28px;
-  padding: 5px 6px;
-  min-width: 0;
+.feature-feedback-title {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
 }
 
-.interest-option span {
-  line-height: 1.2;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.interest-option:hover {
-  background: #f3f4f6;
-  border-color: #cbd5e1;
-}
-
-.interest-option:has(input:checked) {
-  background: #eef6ff;
-  border-color: #93c5fd;
-  color: #185ea5;
-}
-
-.interest-option input {
-  accent-color: #2563eb;
-  flex: 0 0 auto;
-  height: 14px;
-  width: 14px;
-}
-
-.feedback-note {
+.feature-feedback-subtitle {
   color: #6b7280;
   font-size: 11px;
+  font-weight: 500;
   line-height: 1.3;
+}
+
+.feature-feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 5px;
+}
+
+.feature-feedback-primary,
+.feature-feedback-secondary {
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  padding: 5px 8px;
+}
+
+.feature-feedback-primary {
+  background: #2563eb;
+  border: 1px solid #2563eb;
+  color: #fff;
+}
+
+.feature-feedback-secondary {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+}
+
+.feature-feedback-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.feature-feedback-secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.feature-feedback-privacy {
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin-top: 3px;
 }
 
 .link-button {
@@ -328,36 +349,12 @@ h1 {
   text-decoration: underline;
 }
 
-.interest-summary {
-  align-items: flex-start;
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
-}
-
-.interest-summary-list {
-  color: #374151;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  line-height: 1.2;
-}
-
-.interest-chip {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 999px;
-  color: #374151;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 7px;
-}
-
 .metric-label {
   color: #6b7280;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .btn {

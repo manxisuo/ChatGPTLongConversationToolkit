@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ChatGPT Conversation Toolkit",
+    "message": "ChatGPT Long Conversation Toolkit",
     "description": "Extension name"
   },
   "extensionDescription": {
@@ -8,7 +8,7 @@
     "description": "Extension description"
   },
   "title": {
-    "message": "ChatGPT Conversation Toolkit",
+    "message": "ChatGPT Long Conversation Toolkit",
     "description": "Popup title"
   },
   "subtitle": {
@@ -36,7 +36,7 @@
     "description": "Visual mode title"
   },
   "safeModeDesc": {
-    "message": "Only hides older rounds on screen. Safest and easiest to restore.",
+    "message": "Only hides older exchanges on screen. Safest and easiest to restore.",
     "description": "Visual mode description"
   },
   "removeModeTitle": {
@@ -44,27 +44,27 @@
     "description": "Remove mode title"
   },
   "removeModeDesc": {
-    "message": "Temporarily trims older rounds from this view. Refresh ChatGPT to restore.",
+    "message": "Temporarily trims older exchanges from this view. Refresh ChatGPT to restore.",
     "description": "Remove mode description"
   },
   "safeModeSelected": {
-    "message": "Visual Control selected: older rounds stay in the page and are hidden visually.",
+    "message": "Visual Control selected: older exchanges stay in the page and are hidden visually.",
     "description": "Visual mode selected status"
   },
   "removeModeSelected": {
-    "message": "Refresh Restore selected: older rounds are discarded from this view and restored by refreshing ChatGPT.",
+    "message": "Refresh Restore selected: older exchanges are discarded from this view and restored by refreshing ChatGPT.",
     "description": "Remove mode selected status"
   },
   "keepRoundsLabel": {
-    "message": "Keep only recent:",
+    "message": "Keep recent:",
     "description": "Label for keep rounds input"
   },
   "roundsUnit": {
-    "message": "rounds",
+    "message": "exchanges",
     "description": "Unit for rounds input"
   },
   "roundStatsBadge": {
-    "message": "Visible $VISIBLE$ / Total $TOTAL$ rounds",
+    "message": "Visible $VISIBLE$ / Total $TOTAL$ exchanges",
     "description": "Popup badge showing visible and total rounds",
     "placeholders": {
       "VISIBLE": { "content": "$1", "example": "10" },
@@ -76,11 +76,11 @@
     "description": "Current view status section title"
   },
   "visibleRoundsLabel": {
-    "message": "Visible",
+    "message": "Visible exchanges",
     "description": "Metric label for visible rounds"
   },
   "visibleRoundsValue": {
-    "message": "$VISIBLE$ / $TOTAL$ rounds",
+    "message": "$VISIBLE$ / $TOTAL$",
     "description": "Metric value for visible and total rounds",
     "placeholders": {
       "VISIBLE": { "content": "$1", "example": "3" },
@@ -88,7 +88,7 @@
     }
   },
   "optimizedRoundsLabel": {
-    "message": "Hidden",
+    "message": "Hidden exchanges",
     "description": "Metric label for hidden rounds"
   },
   "domReductionLabel": {
@@ -96,7 +96,7 @@
     "description": "Metric label for view reduction"
   },
   "optimizedRoundsValue": {
-    "message": "$ROUNDS$ rounds",
+    "message": "$ROUNDS$",
     "description": "Metric value for hidden rounds",
     "placeholders": {
       "ROUNDS": { "content": "$1", "example": "17" }
@@ -107,7 +107,7 @@
     "description": "Apply view control button text"
   },
   "errorKeepRoundsRange": {
-    "message": "Keep rounds must be between 1-100",
+    "message": "Keep exchanges must be between 1-100",
     "description": "Error message for invalid keep rounds range"
   },
   "errorNotChatGPT": {
@@ -123,7 +123,7 @@
     "description": "Error message for failed operation"
   },
   "successCleaned": {
-    "message": "Kept the last $ROUNDS$ rounds",
+    "message": "Kept the last $ROUNDS$ exchanges",
     "description": "Success message after applying view control",
     "placeholders": {
       "ROUNDS": { "content": "$1", "example": "10" }
@@ -142,14 +142,14 @@
     "description": "Error message when no messages found"
   },
   "infoNoNeedClean": {
-    "message": "Current conversation has only $ROUNDS$ rounds, no need to hide older rounds",
+    "message": "Current conversation has only $ROUNDS$ exchanges, no need to hide older exchanges",
     "description": "Info message when no need to hide",
     "placeholders": {
       "ROUNDS": { "content": "$1", "example": "10" }
     }
   },
   "successCleanedDetailed": {
-    "message": "Organized this view: $REMOVED$ older rounds hidden, $KEPT$ recent rounds visible",
+    "message": "Organized this view: $REMOVED$ older exchanges hidden, $KEPT$ recent exchanges visible",
     "description": "Success message with detailed remove info",
     "placeholders": {
       "REMOVED": { "content": "$1", "example": "5" },
@@ -157,7 +157,7 @@
     }
   },
   "successCollapsedDetailed": {
-    "message": "Hidden $HIDDEN$ old rounds, kept the latest $KEPT$ rounds visible",
+    "message": "Hidden $HIDDEN$ old exchanges, kept the latest $KEPT$ exchanges visible",
     "description": "Success message with detailed visual hide info",
     "placeholders": {
       "HIDDEN": { "content": "$1", "example": "42" },
@@ -173,7 +173,7 @@
     "description": "Label for auto-maintain checkbox"
   },
   "autoMaintainEnabled": {
-    "message": "Auto-maintain enabled (keeping $ROUNDS$ rounds)",
+    "message": "Auto-maintain enabled (keeping $ROUNDS$ exchanges)",
     "description": "Status message when auto-maintain is enabled",
     "placeholders": {
       "ROUNDS": { "content": "$1", "example": "10" }
@@ -183,56 +183,29 @@
     "message": "Auto-maintain disabled",
     "description": "Status message when auto-maintain is disabled"
   },
-  "nextFeatureTitle": {
-    "message": "My interests",
-    "description": "Feature interest section title"
+  "featureFeedbackTitle": {
+    "message": "💡 Suggest Features",
+    "description": "Feature feedback survey entry title"
   },
-  "nextFeatureSearch": {
-    "message": "Search messages",
-    "description": "Search feature interest option"
+  "featureFeedbackSubtitle": {
+    "message": "Tell us what you'd like next",
+    "description": "Feature feedback survey entry subtitle"
   },
-  "nextFeatureOutline": {
-    "message": "Auto outline",
-    "description": "Outline feature interest option"
+  "featureFeedbackSubmit": {
+    "message": "Give Feedback",
+    "description": "Feature feedback survey entry submit action"
   },
-  "nextFeatureNavigation": {
-    "message": "Conversation navigation",
-    "description": "Navigation feature interest option"
+  "featureFeedbackDone": {
+    "message": "I've Submitted",
+    "description": "Feature feedback survey entry completion action"
   },
-  "nextFeatureCodeFolding": {
-    "message": "Fold code blocks",
-    "description": "Code folding feature interest option"
+  "featureFeedbackDoneConfirm": {
+    "message": "Feedback completed? This entry will no longer be shown.",
+    "description": "Confirmation shown before permanently hiding the feedback entry"
   },
-  "nextFeatureImageFolding": {
-    "message": "Fold images",
-    "description": "Image folding feature interest option"
-  },
-  "nextFeatureNote": {
-    "message": "Your interests are saved locally on this browser only.",
-    "description": "Feature interest privacy note"
-  },
-  "nextFeatureSave": {
-    "message": "Save interests",
-    "description": "Button for saving future tool interests"
-  },
-  "nextFeatureEdit": {
-    "message": "Edit",
-    "description": "Button for editing saved future tool interests"
-  },
-  "nextFeatureNone": {
-    "message": "No interests marked",
-    "description": "Empty state for saved future tool interests"
-  },
-  "nextFeatureProgress": {
-    "message": "Available: 0 / $COUNT$",
-    "description": "Progress text for saved future tool interests",
-    "placeholders": {
-      "COUNT": { "content": "$1", "example": "2" }
-    }
-  },
-  "nextFeatureSaved": {
-    "message": "Preference saved locally",
-    "description": "Status message after saving feature interest"
+  "featureFeedbackPrivacy": {
+    "message": "We do not collect chat content",
+    "description": "Privacy reassurance shown in the feedback survey entry"
   },
   "panelButton": {
     "message": "Conversation",
@@ -314,14 +287,14 @@
     }
   },
   "hiddenOlderMessages": {
-    "message": "Hidden older messages ($ROUNDS$ rounds)",
+    "message": "$ROUNDS$ older exchanges hidden",
     "description": "Placeholder shown where old messages were hidden",
     "placeholders": {
       "ROUNDS": { "content": "$1", "example": "42" }
     }
   },
   "removedOlderMessages": {
-    "message": "Older messages hidden from this view until refresh ($ROUNDS$ rounds)",
+    "message": "Older exchanges hidden from this view until refresh ($ROUNDS$ exchanges)",
     "description": "Placeholder shown where old messages were removed",
     "placeholders": {
       "ROUNDS": { "content": "$1", "example": "42" }
@@ -332,7 +305,7 @@
     "description": "Expand hidden messages action"
   },
   "turnOffAutoMaintainToExpand": {
-    "message": "Turn off auto-maintain to expand.",
+    "message": "Turn off auto-maintain to show hidden exchanges.",
     "description": "Hint shown when auto-maintain disables placeholder expansion"
   },
   "expandHiddenMessagesFailed": {
@@ -348,7 +321,7 @@
     "description": "Warning shown in popup when DOM structure change is detected"
   },
   "badgeTitle": {
-    "message": "Current conversation: $VISIBLE$ visible / $TOTAL$ total rounds",
+    "message": "Current conversation: $VISIBLE$ visible / $TOTAL$ total exchanges",
     "description": "Tooltip for the extension icon badge",
     "placeholders": {
       "VISIBLE": { "content": "$1", "example": "10" },

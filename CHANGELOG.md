@@ -7,6 +7,7 @@
 - Added experimental Loaded Search V0 with message-level results and click-to-jump
 - Added experimental Visible Outline V0 using observable local structure
 - Kept the experimental Conversation Tools panel disabled by default for the v1.3 release boundary
+- Fixed round counting so a user question without an assistant response still counts as one round
 
 ## Version 1.3.0 - Long Conversation Control
 

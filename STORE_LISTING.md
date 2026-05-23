@@ -10,31 +10,31 @@ Control long ChatGPT conversations and keep recent rounds easy to scan.
 
 ## English Description
 
-Make long ChatGPT conversations easier to control.
+Make long ChatGPT conversations easier to control and navigate.
 
 Features:
 
-- Keep only recent conversation rounds visible
-- Hide older rounds visually
-- Expand hidden rounds when needed
-- Auto-maintain a visible round limit while chatting
-- Reduce visual clutter in long sessions
-- No backend, tracking, analytics, or conversation upload
+* Keep only recent conversation content visible
+* Visually hide older content without deleting it
+* Automatically maintain your visible conversation limit while chatting
+* Reduce visual clutter during long sessions
+* Local-first: no backend, no tracking, no analytics, and no conversation upload
 
-This extension only changes the current ChatGPT page display. It does not delete your ChatGPT account data and does not upload conversation content.
+This extension only changes how the current ChatGPT page is displayed. It does not delete your ChatGPT account data, modify your conversation history, or upload any conversation content.
 
 ## Chinese Description
 
-优化 ChatGPT 长对话体验。
+让长 ChatGPT 对话更容易管理和导航。
 
-- 仅保留最近 N 轮对话可见
-- 在视觉上隐藏旧轮次
-- 需要时可展开隐藏内容
-- 对话中可自动保持可见轮数上限
-- 减少长会话中的视觉负担
-- 无后端、无追踪、无统计、不会上传对话内容
+功能：
 
-此扩展只改变当前 ChatGPT 页面显示效果，不会删除你的 ChatGPT 账号数据，也不会上传对话内容。
+* 仅保留最近的对话内容可见
+* 在视觉上隐藏较早内容，而不会删除它们
+* 对话过程中自动保持可见内容上限
+* 减少长会话中的视觉干扰
+* 本地优先：无后端、无追踪、无统计、不会上传任何对话内容
+
+此扩展仅改变当前 ChatGPT 页面显示方式，不会删除你的 ChatGPT 账号数据，不会修改你的对话历史，也不会上传任何对话内容。
 
 ## Version 1.3.0 Release Notes
 
