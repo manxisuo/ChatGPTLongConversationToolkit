@@ -1,6 +1,6 @@
 Privacy Policy
 
-ChatGPT Conversation Manager does not transmit any personal data.
+ChatGPT Conversation Toolkit does not transmit any personal data.
 
 All operations performed by the extension occur locally within the user's browser.
 The extension does not send any information to external servers.

@@ -1,4 +1,4 @@
-# ChatGPT Conversation Manager
+# ChatGPT Conversation Toolkit
 
 A lightweight Chrome and Edge extension for making long ChatGPT conversations easier to control and revisit.
 
@@ -12,6 +12,8 @@ Long Conversation Experience:
 - Hide older rounds visually when a conversation becomes hard to scan
 - Optionally discard older page nodes until refresh
 - Stay local, lightweight, and privacy-first
+
+The extension no longer treats performance cleanup as the core product promise. ChatGPT may lazy-load or virtualize conversation content, so future search and outline features are scoped to currently loaded content unless explicitly stated otherwise.
 
 ## Features
 

@@ -61,6 +61,10 @@ chrome.runtime.onInstalled.addListener((details) => {
         });
       }
     });
+
+    if (details.previousVersion && details.previousVersion !== '1.3.0') {
+      chrome.storage.local.set({ showV130Intro: true });
+    }
   }
 });
 

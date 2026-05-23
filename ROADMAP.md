@@ -1,495 +1,341 @@
 # ChatGPT Long Conversation Roadmap
 
-## Product Direction
+## Strategic Reassessment
 
-The product is moving from a DOM cleanup / performance-first extension to a long conversation management product.
-
-Core goal:
+The original product assumption is weakening:
 
 ```text
-Make long ChatGPT conversations easier to understand, control, search, and revisit.
+Long conversation -> large DOM -> slow page -> remove old messages -> improve performance
 ```
 
-Primary user problem:
+ChatGPT now uses lazy loading, virtualization, and other frontend optimizations. The page DOM no longer reliably contains the full conversation, and extension features that depend on complete frontend DOM access will be incomplete or fragile.
+
+This does not remove the user need. It changes the product path.
+
+The real user need is not:
 
 ```text
-Long conversations become difficult to find, navigate, and revisit.
+Reduce DOM nodes by 30%.
 ```
 
-The old performance-first assumption is weakening:
+The real user need is:
 
 ```text
-Long conversation -> huge DOM -> slow page -> remove DOM to fix it
+Make long AI conversations easier to read, navigate, organize, and revisit.
 ```
 
-ChatGPT's own virtualization/lazy rendering may solve much of the page performance problem at the platform layer. The extension should not keep fighting the platform renderer as its main strategy.
+Long conversations will become more common as model context windows grow. The product should stop trying to prove that performance cleanup still matters and instead focus on long conversation experience.
 
-The new product thesis:
+## Product Positioning
 
-```text
-Even if long chats are fast, they are still hard to navigate, search, summarize, and read.
-```
-
-## Product Guardrails
-
-New features should answer yes to:
-
-```text
-Does this improve the long conversation experience?
-```
-
-Avoid expanding into:
-
-- AI drawing
-- Multi-model aggregation
-- Agent systems
-- Knowledge base platforms
-- Prompt marketplaces
-- Broad productivity suites
-
-Keep the extension:
-
-- Lightweight
-- Local-first
-- Privacy-first
-- No backend dependency
-- No analytics or conversation upload
-
-## Naming Direction
-
-Current published name:
+Old positioning:
 
 ```text
 ChatGPT History Cleaner
+Make ChatGPT faster by cleaning old history.
 ```
 
-Naming candidates to evaluate:
+Current transition name:
 
 ```text
-ChatGPT Conversation Manager
-ChatGPT Long Conversation Manager
-ChatGPT Conversation Navigator
-ChatGPT Conversation Cleaner
+ChatGPT Conversation Toolkit
 ```
 
-Avoid making "Performance Booster" the main name or headline. Performance can remain a feature area, but not the core identity.
-
-Avoid over-generic names like:
+Long-term positioning candidates:
 
 ```text
-ChatGPT Toolkit
-ChatGPT Long Chat Toolkit
+AI Conversation Workspace
 ```
 
-Reason:
-
-- Too broad.
-- Weak search intent.
-- Does not immediately explain the user benefit.
-- Can pull the product toward unrelated tool accumulation.
-
-## Roadmap Status
-
-Legend:
+Working product definition:
 
 ```text
-[ ] Not started
-[/] In progress
-[x] Done
-[~] Reconsider / paused
+A lightweight, local-first tool for reading, navigating, organizing, and revisiting long ChatGPT conversations.
 ```
 
-## Phase 0: Learn Before Build
+The product should not be centered on performance. Performance can remain a secondary benefit of visual control, but the core story is long conversation experience.
+
+## Design Principles
+
+### Do Not Fight ChatGPT Internals
+
+Avoid:
+
+- Assuming the full conversation exists in the frontend DOM.
+- Automatically scrolling through a conversation to build an index by default.
+- Trying to access unrendered content through fragile page internals.
+- Large-scale DOM deletion that conflicts with ChatGPT virtualization.
+
+Prefer:
+
+- Enhancing currently loaded content.
+- Non-invasive UI layers.
+- Local-only indexing of content the page exposes.
+- Reversible reading controls.
+- Soft failure when ChatGPT DOM changes.
+
+### State Capability Boundaries Clearly
+
+Do not call a feature "History Search" if it only searches rendered page content.
+
+Preferred naming:
+
+```text
+Loaded Conversation Search
+Conversation Navigation
+Visible Conversation Outline
+```
+
+Search and Outline should be framed as navigation for currently loaded content, not as complete cloud history management.
+
+### Start From User Pain, Not DOM Possibility
+
+The product should solve problems users actually feel in long conversations:
+
+- Finding where something was discussed.
+- Understanding what the conversation contains.
+- Moving around without getting lost.
+- Reducing visual overload from long messages, code blocks, and images.
+- Marking important sections for later.
+- Extracting decisions, TODOs, and useful snippets.
+
+## Product Layers
+
+### Layer 1: Reading Experience
 
 Goal:
 
 ```text
-Use the existing user base to validate the new direction before overbuilding.
+Make long conversations more comfortable to read.
 ```
 
-Why this phase matters:
+Candidate features:
 
-```text
-The product already has real users. Ask and observe before guessing.
-```
+- Keep latest N visible.
+- Visual collapse / expand.
+- Jump latest.
+- Jump oldest visible.
+- Message folding.
+- Code block folding.
+- Compact image view.
+- Bookmarks.
+- Highlights.
 
-Tasks:
-
-- [ ] Review Chrome Web Store and Edge Add-ons reviews for repeated complaints.
-- [ ] Review support emails / user feedback if available.
-- [ ] Add a lightweight "What do you want next?" section in settings.
-- [ ] Let users indicate interest in search, outline, navigation, code folding, and image folding.
-- [ ] Track only local preference state unless explicit privacy-safe feedback collection is designed.
-- [ ] Decide the next major feature based on observed demand, not only intuition.
-
-Validation questions:
-
-- [ ] Do users still mention lag after ChatGPT virtualization?
-- [ ] Do users ask for finding old content?
-- [ ] Do users ask for jumping between sections?
-- [ ] Do users ask for reducing visual clutter?
-
-Success Criteria:
-
-- [ ] The next major feature is chosen from observed user interest, not only internal speculation.
-- [ ] Settings page can show local user preference signals without uploading conversation data.
-
-## Phase 1: Reposition Existing Features As View Control
+### Layer 2: Navigation
 
 Goal:
 
 ```text
-Keep existing users stable while moving the product story away from raw performance.
+Help users move through loaded conversation content without getting lost.
 ```
 
-Tasks:
+Candidate features:
 
-- [x] Update extension naming strategy away from "Performance Booster" as the main identity.
-- [x] Rewrite popup copy around "View Control" and "Long Conversation Control".
-- [x] Reconsider default mode. Prefer safe visual control with ChatGPT virtualization.
-- [x] Keep "only show recent N rounds" as a view-control feature.
-- [x] Keep safe collapse and one-click restore.
-- [x] Remove Local Snapshot / Performance Mode from the main extension.
-- [x] Rework store listing copy around long conversation control, search, and navigation.
-- [ ] Rework screenshots/promo text away from "Speed up ChatGPT" as the primary claim.
+- Loaded Conversation Search.
+- Visible Conversation Outline.
+- Message navigation.
+- Quick jump.
+- Section anchors.
+- Current visible region indicator.
 
-Success Criteria:
+Important boundary:
 
-- [ ] Existing users still understand the core "only show recent N rounds" workflow.
-- [x] New copy no longer depends on "ChatGPT is slow" as the main promise.
-- [x] Local Snapshot / Performance Mode is removed from the product surface.
+```text
+These features operate on currently loaded content unless explicitly stated otherwise.
+```
 
-## Phase 1.5: UI Experiment
+### Layer 3: Organization
 
 Goal:
 
 ```text
-Find a UI container that can support Search, Outline, Navigation, and Reading Control without cluttering ChatGPT.
+Help users keep useful parts of long conversations.
 ```
 
-Why this matters:
+Candidate features:
 
-```text
-The next features are not one-off buttons. They need a durable surface.
-```
+- Bookmark snippets.
+- Tags.
+- TODO extraction.
+- Decision extraction.
+- Export Markdown.
+- Lightweight local summaries.
 
-Candidates:
-
-- [ ] Floating compact panel.
-- [ ] Right-side fixed sidebar.
-- [ ] Collapsible drawer.
-- [ ] Top toolbar entry point.
-- [ ] Minimal floating button that opens the full panel.
-
-Evaluation criteria:
-
-- [ ] Does not block ChatGPT's composer or message content.
-- [ ] Works on narrow and wide screens.
-- [ ] Can hold search results and outline items.
-- [ ] Easy to hide.
-- [ ] Minimizes cognitive load.
-- [ ] Feels like a tool surface, not a marketing widget.
-
-Success Criteria:
-
-- [ ] Search and Outline can share the same UI container.
-- [ ] The container can be opened, hidden, and reopened without losing state.
-- [ ] The container does not block normal ChatGPT usage.
-
-## Phase 2A: Message-Aware Search V0
+### Layer 4: Workspace
 
 Goal:
 
 ```text
-Help users quickly find old content by searching message structure, not just visible page text.
+Turn useful conversations into a local AI conversation workspace.
 ```
 
-Why this is not just Ctrl+F:
+Candidate features:
 
-- Ctrl+F searches visible page text.
-- Message-aware search groups results by message.
-- Results can show role, type, preview, and position.
-- Results can include hidden/collapsed content if it is available to the extension.
-- Users can jump directly to the relevant message instead of stepping through every text match.
+- Cross-conversation search.
+- Local indexing.
+- Saved snippet library.
+- Multi-conversation management.
+- Local archive.
+- Shareable exports.
 
-Tasks:
+This requires a different product surface and should not be rushed into the current extension before demand is validated.
 
-Phase 2A-1: Extract messages
+### Layer 5: AI Enhancement
 
-- [ ] Build a message extraction adapter.
-- [ ] Extract message id, role, text, index, and DOM anchor.
-- [ ] Detect basic content markers: code, heading, image-heavy, question.
-- [ ] Prefer semantic selectors and isolate ChatGPT DOM assumptions.
+Long-term examples:
 
-Phase 2A-2: Index messages
+- "Where did we discuss the Plum platform?"
+- "What design changes happened in the last 100 turns?"
+- "Find all network framework discussions."
+- "Summarize the decision process."
 
-- [ ] Build a local in-page message index.
-- [ ] Update index when visible messages change.
-- [ ] Include hidden/collapsed content where available.
-- [ ] Keep the index local to the page/browser.
+This layer may require optional user-triggered LLM integration. It should be considered only after privacy, cost, latency, and complexity are acceptable.
 
-Phase 2A-3: Search UI
+## Version Roadmap
 
-- [ ] Add local message-aware search input.
-- [ ] Group results by message boundary.
-- [ ] Label result type: question, answer, code, heading, image-heavy message.
-- [ ] Show context preview around the match.
-
-Phase 2A-4: Jump and highlight
-
-- [ ] Add click-to-jump from search results.
-- [ ] Highlight matched text where safe.
-- [ ] Clear highlight cleanly.
-- [ ] Handle hidden/collapsed result targets.
-
-Success Criteria:
-
-- [ ] User can find and jump to a message within 3 clicks after opening the search UI.
-- [ ] Search results are grouped by message, not raw text occurrences.
-- [ ] Search feels meaningfully different from Ctrl+F.
-- [ ] Search remains responsive on 300+ message conversations.
-
-V0 should avoid:
-
-```text
-Plain allText.includes(keyword) with a flat match count.
-```
-
-If search does not provide message context, it is too close to Ctrl+F and should not be shipped as a flagship feature.
-
-## Phase 2B: Conversation Outline V0
+## v1.3: Reposition And Stabilize
 
 Goal:
 
 ```text
-Give users an immediately visible reason to install: ChatGPT conversations get a table of contents.
+Move from performance cleaner to long conversation control without changing the core workflow.
 ```
 
-Why this comes before smaller navigation helpers:
+Ship:
 
-- Outline is screenshot-friendly.
-- Users can understand the value in one screenshot.
-- It clearly differs from ChatGPT's built-in rendering improvements.
-- It addresses the real long-conversation problem: finding where a discussion happened.
+- Keep latest N visible.
+- Visual Control for hiding older rounds.
+- Refresh Restore as an advanced option.
+- Popup UI and copy repositioned around long conversation control.
+- Local-only "What do you want next?" feature interest section.
+- Stability fixes.
+- Store copy and screenshots no longer centered on "Speed up ChatGPT".
 
-Tasks:
+Do not ship by default:
 
-- [ ] Add a conversation outline panel.
-- [ ] Build V0 with rule-based extraction only.
-- [ ] Extract user questions.
-- [ ] Extract headings from assistant responses.
-- [ ] Extract code block markers.
-- [ ] Extract image-heavy message markers.
-- [ ] Add click-to-jump from outline items.
-- [ ] Keep all indexing local to the browser.
-- [ ] Avoid cloud summarization by default.
-- [ ] Do not attempt topic-shift detection in V0.
+- Search.
+- Outline.
+- Conversation Tools panel.
+- Any feature that implies full history access.
 
-Success Criteria:
-
-- [ ] Users can understand the outline without reading instructions.
-- [ ] A screenshot of the outline immediately communicates product value.
-- [ ] Outline items jump to the relevant message or section.
-- [ ] V0 does not pretend to understand deep topics it cannot reliably infer.
-
-Display principle:
+Release principle:
 
 ```text
-The internal extractor can be structural, but the UI should feel like a natural conversation map.
+v1.3 is a low-risk positioning and maintenance release.
 ```
 
-The implementation can extract:
-
-- Questions
-- Assistant headings
-- Code markers
-- Image-heavy messages
-
-But the display can group them into simple sections/cards where that is obvious from nearby structure. Do not claim deep topic understanding in V0.
-
-V0 should not try to infer deep topics like:
-
-```text
-Qt plugin architecture -> dynamic libraries -> qmake -> build system
-```
-
-Without an LLM, topic-shift detection will be brittle. With an LLM, privacy, cost, latency, and product complexity all increase. Start with observable structure first.
-
-Potential outline format:
-
-```text
-Conversation Outline
-
-Extension Development
-- ? How should v1.3.0 be planned?
-- # Manifest
-- <code> background.js
-- <code> content.js
-
-View Control Discussion
-- ? Why can virtualized messages be hard to manage?
-- # Virtualization / lazy rendering
-- <image> Image-heavy section
-```
-
-## Phase 3: Navigation Layer
+## v1.4: Loaded Navigation
 
 Goal:
 
 ```text
-Help users move around long conversations without getting lost.
+Add navigation for currently loaded conversation content.
 ```
 
-Tasks:
+Candidate features:
 
-- [ ] Add jump to latest.
-- [ ] Add jump to oldest visible / oldest kept message.
-- [ ] Add current visible region indicator.
-- [ ] Add recent questions list as a supporting navigation view.
-- [ ] Add click-to-jump behavior for recent questions.
-- [ ] Persist minimal UI settings locally.
+- Loaded Conversation Search.
+- Message-level search results.
+- Click-to-jump.
+- Quick jump latest / oldest visible.
+- Code block folding.
 
-Success Criteria:
-
-- [ ] User can move to latest, oldest visible, and selected outline/search results without manual scrolling.
-- [ ] Navigation controls do not add visual clutter when unused.
-
-Note:
+Naming requirement:
 
 ```text
-Recent Questions is useful, but should support Outline/Search rather than become the flagship feature.
+Use "loaded" or "visible" language wherever completeness matters.
 ```
 
-## Phase 4: Reading Control
+Do not promise:
+
+- Complete history search.
+- Search across unrendered ChatGPT messages.
+- Search across conversations.
+
+## v1.5: Reading And Orientation
 
 Goal:
 
 ```text
-Reduce visual overload inside long conversations.
+Make long loaded conversations easier to scan.
 ```
 
-Tasks:
+Candidate features:
 
-- [ ] Add large code block auto-collapse.
-- [ ] Add configurable code block threshold.
-- [ ] Add image collapse / compact image view.
-- [ ] Add "collapse all code blocks" action.
-- [ ] Add "expand all in visible region" action.
-- [ ] Keep all controls local and reversible.
+- Mini-map.
+- Visible Conversation Outline.
+- Bookmarks.
+- Highlights.
+- Current position indicator.
+- Compact reading controls.
 
-Success Criteria:
-
-- [ ] Large code and image-heavy conversations become visibly easier to scan.
-- [ ] Collapsed content can be restored without losing context.
-
-## Phase 5: Optional Local Intelligence
-
-Goal:
+Outline boundary:
 
 ```text
-Add lightweight intelligence without creating privacy or complexity risk.
+The outline is structural and local. It should not claim deep topic understanding.
 ```
 
-Tasks:
+## v2.x: Conversation Workspace Exploration
 
-- [ ] Explore local-only summary heuristics.
-- [ ] Extract question timeline.
-- [ ] Extract code/file references.
-- [ ] Extract decisions / TODO-like lines using simple rules.
-- [ ] Consider optional user-triggered LLM integration only if privacy and complexity are clearly acceptable.
+Only explore this if users clearly ask for:
 
-## Deferred / Removed From Early Roadmap
+- Complete search.
+- Multi-conversation management.
+- Conversation archive.
+- Long-term organization.
 
-Deferred:
+Candidate architecture:
+
+- Local storage.
+- IndexedDB.
+- Import/export files.
+- Local index.
+- Optional user-triggered AI features.
+
+This is a separate product step, not an incremental DOM feature.
+
+## Current Implementation Status
+
+Done:
+
+- Reframed popup copy around Long Conversation Control.
+- Removed Local Snapshot from the product surface.
+- Added Visual Control and Refresh Restore framing.
+- Added local-only feature interest settings.
+- Built an experimental in-page Conversation Tools panel.
+- Built an experimental local message extractor.
+- Built experimental Loaded Search / Outline / Navigation prototypes.
+
+Release boundary:
 
 ```text
-Deep topic-shift detection
-Cloud summary
-Automatic topic clustering
+The experimental Conversation Tools panel is disabled by default and should not ship as a default v1.3 feature.
 ```
-
-Reason:
-
-```text
-These can create privacy, reliability, cost, and complexity risks before the product has validated simpler local features.
-```
-
-## Performance Features Policy
-
-Current performance-related features:
-
-- Visual Control: visual hiding only.
-- Refresh Restore: remove old nodes from the current view until refresh.
-
-Policy:
-
-- [x] Remove Local Snapshot mode because ChatGPT virtualization makes DOM snapshots unreliable.
-- [ ] Do not keep investing heavily in DOM removal unless user feedback proves it is still needed.
-- [ ] Keep Refresh Restore available only as an advanced edge-case tool.
-- [x] Prefer view control, search, outline, and navigation for the main roadmap.
-
-## Engineering Risks
-
-Core risk:
-
-```text
-ChatGPT is a moving target. DOM structure, virtualization, and lazy rendering can change without notice.
-```
-
-Risks:
-
-- [ ] ChatGPT DOM structure changes.
-- [ ] Virtualization behavior changes.
-- [ ] Dynamic loading timing differs by account, browser, or conversation type.
-- [ ] Mobile / narrow layout differs from desktop.
-- [ ] Browser compatibility issues across Chrome and Edge.
-- [ ] Hidden/collapsed extension state conflicts with ChatGPT's own virtualized rendering.
-
-Mitigation:
-
-- [ ] Prefer semantic selectors over fragile hierarchy selectors.
-- [ ] Build a small DOM adapter layer for message extraction.
-- [ ] Keep extraction, indexing, rendering, and actions separated.
-- [ ] Fail softly when message structure cannot be detected.
-- [ ] Keep a DOM diagnostic path for developer builds, but do not expose noisy diagnostics to normal users.
-- [ ] Avoid deep coupling to ChatGPT internal class names.
 
 ## Current Next Step
 
-Immediate Next Action:
+Immediate actions:
 
-```text
-1. Update popup copy and mode framing away from Performance Booster.
-2. Build a quick UI container prototype for Search/Outline.
-3. Implement buildMessageExtractor() as the first Message-Aware Search foundation.
-```
+1. Prepare v1.3 as a stable repositioning release.
+2. Keep Search / Outline behind an experimental flag.
+3. Update store screenshots and promo copy away from performance claims.
+4. Validate real user interest using the local feature interest section.
+5. Decide whether v1.4 should prioritize Loaded Search, Code Block Folding, or Quick Jump based on feedback.
 
-Recommended roadmap node:
+## Engineering Policy
 
-```text
-Phase 0: add a local-only "What do you want next?" section in settings.
-```
+High-risk patterns:
 
-After that:
+- Deep coupling to ChatGPT class names.
+- Large-scale DOM removal.
+- Automatic full-history scroll indexing.
+- Features that imply access to unrendered content.
 
-```text
-Phase 1: update popup copy and mode framing from Performance Booster to Long Conversation / View Control.
-```
+Preferred patterns:
 
-Then:
-
-```text
-Phase 1.5: run a UI Experiment for the durable panel/drawer surface.
-```
-
-Then:
-
-```text
-Phase 2A: implement Message-Aware Search V0.
-```
-
-Then:
-
-```text
-Phase 2B: implement Conversation Outline V0.
-```
+- Semantic selectors where available.
+- Small DOM adapter layer.
+- Local-only state.
+- Reversible UI changes.
+- Explicit capability boundaries.
+- Fail softly when ChatGPT changes.

@@ -17,6 +17,7 @@ Thumbs.db
 *.temp
 
 # 打包文件
+release/
 *.zip
 *.crx
 *.pem

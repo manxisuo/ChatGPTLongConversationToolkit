@@ -3,6 +3,14 @@ const CLEANUP_MODES = {
   REMOVE: 'remove'
 };
 
+const FEATURE_INTERESTS = [
+  { value: 'search', labelKey: 'nextFeatureSearch' },
+  { value: 'outline', labelKey: 'nextFeatureOutline' },
+  { value: 'navigation', labelKey: 'nextFeatureNavigation' },
+  { value: 'codeFolding', labelKey: 'nextFeatureCodeFolding' },
+  { value: 'imageFolding', labelKey: 'nextFeatureImageFolding' }
+];
+
 function getMessage(key, substitutions = []) {
   return chrome.i18n.getMessage(key, substitutions);
 }
@@ -51,11 +59,59 @@ function setSelectedMode(cleanupMode) {
   }
 }
 
+function readFeatureInterestsFromForm() {
+  const interests = {};
+  document.querySelectorAll('input[name="nextFeatureInterest"]').forEach((input) => {
+    interests[input.value] = input.checked;
+  });
+  return interests;
+}
+
+function setFeatureInterests(interests = {}) {
+  document.querySelectorAll('input[name="nextFeatureInterest"]').forEach((input) => {
+    input.checked = Boolean(interests[input.value]);
+  });
+}
+
+function getSelectedFeatureInterests(interests = readFeatureInterestsFromForm()) {
+  return FEATURE_INTERESTS.filter((option) => interests[option.value]);
+}
+
+function renderFeatureInterestState(interests = readFeatureInterestsFromForm(), saved = false) {
+  const editor = document.getElementById('featureInterestEditor');
+  const summary = document.getElementById('featureInterestSummary');
+  const list = document.getElementById('featureInterestSummaryList');
+  const progress = document.getElementById('featureInterestProgress');
+  if (!editor || !summary || !list || !progress) return;
+
+  editor.hidden = saved;
+  summary.hidden = !saved;
+  if (!saved) return;
+
+  const selected = getSelectedFeatureInterests(interests);
+  list.textContent = '';
+  if (selected.length === 0) {
+    const empty = document.createElement('span');
+    empty.className = 'interest-chip';
+    empty.textContent = getMessage('nextFeatureNone');
+    list.appendChild(empty);
+  } else {
+    selected.forEach((option) => {
+      const chip = document.createElement('span');
+      chip.className = 'interest-chip';
+      chip.textContent = getMessage(option.labelKey);
+      list.appendChild(chip);
+    });
+  }
+  progress.textContent = getMessage('nextFeatureProgress', [String(selected.length)]);
+}
+
 function readSettingsFromForm() {
   return {
     keepRounds: parseInt(document.getElementById('keepRounds').value, 10),
     autoMaintain: document.getElementById('autoMaintain').checked,
-    cleanupMode: getSelectedMode()
+    cleanupMode: getSelectedMode(),
+    nextFeatureInterests: readFeatureInterestsFromForm()
   };
 }
 
@@ -71,11 +127,24 @@ async function loadSettings() {
     keepRounds: 10,
     autoMaintain: false,
     cleanupMode: CLEANUP_MODES.SAFE,
-    collapseOldMessages: true
+    collapseOldMessages: true,
+    nextFeatureInterests: {},
+    nextFeatureInterestsSaved: false,
+    showV130Intro: false
   });
   document.getElementById('keepRounds').value = result.keepRounds;
   document.getElementById('autoMaintain').checked = result.autoMaintain;
   setSelectedMode(resolveCleanupMode(result));
+  setFeatureInterests(result.nextFeatureInterests);
+  renderFeatureInterestState(result.nextFeatureInterests, result.nextFeatureInterestsSaved);
+  renderV130Intro(result.showV130Intro);
+}
+
+function renderV130Intro(showIntro) {
+  const intro = document.getElementById('v130Intro');
+  const feedback = document.querySelector('.feedback-section');
+  if (intro) intro.hidden = !showIntro;
+  if (feedback) feedback.hidden = Boolean(showIntro);
 }
 
 async function saveSettings() {
@@ -92,6 +161,16 @@ async function saveSettings() {
     collapseOldMessages: settings.cleanupMode !== CLEANUP_MODES.REMOVE
   });
   return settings;
+}
+
+async function saveFeatureInterests() {
+  const interests = readFeatureInterestsFromForm();
+  await chrome.storage.local.set({
+    nextFeatureInterests: interests,
+    nextFeatureInterestsSaved: true
+  });
+  renderFeatureInterestState(interests, true);
+  showStatus(getMessage('nextFeatureSaved'), 'success');
 }
 
 async function notifyAutoMaintainChange(settings = readSettingsFromForm()) {
@@ -147,29 +226,21 @@ async function loadCurrentRounds() {
 }
 
 function setCurrentRoundsDisplay(stats) {
-  const el = document.getElementById('currentRounds');
-  if (!el) return;
-  if (stats?.visibleRounds > 0 || stats?.totalRounds > 0) {
-    el.textContent = getMessage('roundStatsBadge', [
-      String(stats.visibleRounds || 0),
-      String(stats.totalRounds || stats.visibleRounds || 0)
-    ]);
-  } else {
-    el.textContent = '';
-  }
   updateViewMetrics(stats);
 }
 
 function updateViewMetrics(stats) {
+  const visibleEl = document.getElementById('visibleRounds');
   const optimizedEl = document.getElementById('optimizedRounds');
   const reductionEl = document.getElementById('domReduction');
-  if (!optimizedEl || !reductionEl) return;
+  if (!visibleEl || !optimizedEl || !reductionEl) return;
 
   const visible = stats?.visibleRounds || 0;
   const total = stats?.totalRounds || visible;
   const optimized = Math.max(0, total - visible);
   const reduction = total > 0 ? Math.round((optimized / total) * 100) : 0;
 
+  visibleEl.textContent = getMessage('visibleRoundsValue', [String(visible), String(total)]);
   optimizedEl.textContent = getMessage('optimizedRoundsValue', [String(optimized)]);
   reductionEl.textContent = `${reduction}%`;
 }
@@ -215,6 +286,17 @@ document.getElementById('autoMaintain').addEventListener('change', async () => {
       showStatus(getMessage('autoMaintainDisabled'), 'info');
     }
   }
+});
+
+document.getElementById('saveFeatureInterests').addEventListener('click', saveFeatureInterests);
+
+document.getElementById('editFeatureInterests').addEventListener('click', () => {
+  renderFeatureInterestState(readFeatureInterestsFromForm(), false);
+});
+
+document.getElementById('dismissV130Intro').addEventListener('click', async () => {
+  await chrome.storage.local.set({ showV130Intro: false });
+  renderV130Intro(false);
 });
 
 async function checkContentScript(tabId) {

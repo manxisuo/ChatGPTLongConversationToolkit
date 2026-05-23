@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ChatGPT Conversation Manager",
+    "message": "ChatGPT Conversation Toolkit",
     "description": "Extension name"
   },
   "extensionDescription": {
@@ -8,31 +8,43 @@
     "description": "Extension description"
   },
   "title": {
-    "message": "Conversation Manager",
+    "message": "ChatGPT Conversation Toolkit",
     "description": "Popup title"
   },
   "subtitle": {
     "message": "Long conversation control",
     "description": "Popup subtitle"
   },
+  "v130IntroTitle": {
+    "message": "Long conversation control has been improved",
+    "description": "One-time v1.3 update intro title"
+  },
+  "v130IntroBody": {
+    "message": "The original cleanup workflow is still here. This update adds safer visual hiding, current view status, and clearer long conversation controls.",
+    "description": "One-time v1.3 update intro body"
+  },
+  "v130IntroAction": {
+    "message": "Start using",
+    "description": "One-time v1.3 update intro dismiss action"
+  },
   "modeSectionTitle": {
-    "message": "View Control",
+    "message": "Control mode",
     "description": "Cleanup mode section title"
   },
   "safeModeTitle": {
-    "message": "Visual Control",
+    "message": "Visual Hide (recommended)",
     "description": "Visual mode title"
   },
   "safeModeDesc": {
-    "message": "Hide older rounds visually. Safest and easiest to restore.",
+    "message": "Only hides older rounds on screen. Safest and easiest to restore.",
     "description": "Visual mode description"
   },
   "removeModeTitle": {
-    "message": "Refresh Restore",
+    "message": "Temporary Trim (advanced)",
     "description": "Remove mode title"
   },
   "removeModeDesc": {
-    "message": "Advanced: discard older rounds from this view. Refresh ChatGPT to restore.",
+    "message": "Temporarily trims older rounds from this view. Refresh ChatGPT to restore.",
     "description": "Remove mode description"
   },
   "safeModeSelected": {
@@ -59,6 +71,22 @@
       "TOTAL": { "content": "$2", "example": "27" }
     }
   },
+  "currentViewTitle": {
+    "message": "Current view",
+    "description": "Current view status section title"
+  },
+  "visibleRoundsLabel": {
+    "message": "Visible",
+    "description": "Metric label for visible rounds"
+  },
+  "visibleRoundsValue": {
+    "message": "$VISIBLE$ / $TOTAL$ rounds",
+    "description": "Metric value for visible and total rounds",
+    "placeholders": {
+      "VISIBLE": { "content": "$1", "example": "3" },
+      "TOTAL": { "content": "$2", "example": "17" }
+    }
+  },
   "optimizedRoundsLabel": {
     "message": "Hidden",
     "description": "Metric label for hidden rounds"
@@ -75,7 +103,7 @@
     }
   },
   "cleanButton": {
-    "message": "Apply view control",
+    "message": "Organize conversation now",
     "description": "Apply view control button text"
   },
   "errorKeepRoundsRange": {
@@ -121,7 +149,7 @@
     }
   },
   "successCleanedDetailed": {
-    "message": "Removed $REMOVED$ old rounds, kept the last $KEPT$ rounds",
+    "message": "Organized this view: $REMOVED$ older rounds hidden, $KEPT$ recent rounds visible",
     "description": "Success message with detailed remove info",
     "placeholders": {
       "REMOVED": { "content": "$1", "example": "5" },
@@ -137,11 +165,11 @@
     }
   },
   "errorCleanFailed": {
-    "message": "View control failed: ",
+    "message": "Could not organize this view: ",
     "description": "Error message prefix for view control failure"
   },
   "autoMaintainLabel": {
-    "message": "Auto-maintain while chatting",
+    "message": "Auto-maintain",
     "description": "Label for auto-maintain checkbox"
   },
   "autoMaintainEnabled": {
@@ -154,6 +182,136 @@
   "autoMaintainDisabled": {
     "message": "Auto-maintain disabled",
     "description": "Status message when auto-maintain is disabled"
+  },
+  "nextFeatureTitle": {
+    "message": "My interests",
+    "description": "Feature interest section title"
+  },
+  "nextFeatureSearch": {
+    "message": "Search messages",
+    "description": "Search feature interest option"
+  },
+  "nextFeatureOutline": {
+    "message": "Auto outline",
+    "description": "Outline feature interest option"
+  },
+  "nextFeatureNavigation": {
+    "message": "Conversation navigation",
+    "description": "Navigation feature interest option"
+  },
+  "nextFeatureCodeFolding": {
+    "message": "Fold code blocks",
+    "description": "Code folding feature interest option"
+  },
+  "nextFeatureImageFolding": {
+    "message": "Fold images",
+    "description": "Image folding feature interest option"
+  },
+  "nextFeatureNote": {
+    "message": "Your interests are saved locally on this browser only.",
+    "description": "Feature interest privacy note"
+  },
+  "nextFeatureSave": {
+    "message": "Save interests",
+    "description": "Button for saving future tool interests"
+  },
+  "nextFeatureEdit": {
+    "message": "Edit",
+    "description": "Button for editing saved future tool interests"
+  },
+  "nextFeatureNone": {
+    "message": "No interests marked",
+    "description": "Empty state for saved future tool interests"
+  },
+  "nextFeatureProgress": {
+    "message": "Available: 0 / $COUNT$",
+    "description": "Progress text for saved future tool interests",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "2" }
+    }
+  },
+  "nextFeatureSaved": {
+    "message": "Preference saved locally",
+    "description": "Status message after saving feature interest"
+  },
+  "panelButton": {
+    "message": "Conversation",
+    "description": "Floating conversation panel button"
+  },
+  "panelTitle": {
+    "message": "Conversation Tools",
+    "description": "Conversation panel title"
+  },
+  "panelSubtitle": {
+    "message": "Search, outline, and navigation",
+    "description": "Conversation panel subtitle"
+  },
+  "panelClose": {
+    "message": "Close",
+    "description": "Conversation panel close button"
+  },
+  "panelSearch": {
+    "message": "Search",
+    "description": "Conversation panel search tab"
+  },
+  "panelOutline": {
+    "message": "Outline",
+    "description": "Conversation panel outline tab"
+  },
+  "panelNavigation": {
+    "message": "Navigation",
+    "description": "Conversation panel navigation tab"
+  },
+  "panelSearchPlaceholder": {
+    "message": "Search messages",
+    "description": "Conversation panel search input placeholder"
+  },
+  "panelSearchEmpty": {
+    "message": "Type to search loaded messages.",
+    "description": "Conversation panel empty search hint"
+  },
+  "panelSearchNoResults": {
+    "message": "No results in currently loaded messages.",
+    "description": "Conversation panel no search results hint"
+  },
+  "panelOutlineEmpty": {
+    "message": "No outline items found yet.",
+    "description": "Conversation panel empty outline hint"
+  },
+  "panelJumpLatest": {
+    "message": "Latest",
+    "description": "Conversation panel jump latest button"
+  },
+  "panelJumpOldest": {
+    "message": "Oldest visible",
+    "description": "Conversation panel jump oldest visible button"
+  },
+  "panelRefresh": {
+    "message": "Refresh",
+    "description": "Conversation panel refresh button"
+  },
+  "panelHidden": {
+    "message": "Hidden",
+    "description": "Conversation panel hidden result marker"
+  },
+  "panelAssistant": {
+    "message": "Assistant",
+    "description": "Conversation panel assistant role label"
+  },
+  "panelUser": {
+    "message": "User",
+    "description": "Conversation panel user role label"
+  },
+  "panelUnknown": {
+    "message": "Message",
+    "description": "Conversation panel generic message label"
+  },
+  "panelMessageCount": {
+    "message": "$COUNT$ loaded messages indexed",
+    "description": "Conversation panel indexed message count",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "42" }
+    }
   },
   "hiddenOlderMessages": {
     "message": "Hidden older messages ($ROUNDS$ rounds)",

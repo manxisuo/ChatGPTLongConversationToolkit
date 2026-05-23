@@ -10,16 +10,44 @@
   <main class="container">
     <header class="header">
       <div>
-        <h1 data-i18n="title">Conversation Manager</h1>
+        <h1 data-i18n="title">ChatGPT Conversation Toolkit</h1>
         <p data-i18n="subtitle">Long conversation control</p>
       </div>
-      <span id="currentRounds" class="current-rounds-badge"></span>
     </header>
+
+    <section id="v130Intro" class="intro-card" hidden>
+      <div class="intro-title" data-i18n="v130IntroTitle">Long conversation control has been improved</div>
+      <p data-i18n="v130IntroBody">The original cleanup workflow is still here. This update adds safer visual hiding, current view status, and clearer long conversation controls.</p>
+      <button id="dismissV130Intro" type="button" class="link-button intro-action" data-i18n="v130IntroAction">Start using</button>
+    </section>
+
+    <section class="status-card" aria-live="polite">
+      <div class="section-label" data-i18n="currentViewTitle">Current view</div>
+      <div class="status-grid">
+        <div class="status-metric wide">
+          <span class="metric-label" data-i18n="visibleRoundsLabel">Visible</span>
+          <strong id="visibleRounds">0 / 0</strong>
+        </div>
+        <div class="status-metric">
+          <span class="metric-label" data-i18n="optimizedRoundsLabel">Hidden</span>
+          <strong id="optimizedRounds">0</strong>
+        </div>
+        <div class="status-metric">
+          <span class="metric-label" data-i18n="domReductionLabel">View reduced</span>
+          <strong id="domReduction">0%</strong>
+        </div>
+      </div>
+    </section>
+
+    <button id="removeOldRounds" class="btn btn-primary primary-action">
+      <span class="btn-icon" aria-hidden="true">✦</span>
+      <span data-i18n="cleanButton">Apply view control</span>
+    </button>
 
     <section class="settings-section">
       <div class="section-label" data-i18n="modeSectionTitle">Mode</div>
 
-      <div class="mode-list" role="radiogroup" aria-label="Cleanup mode">
+      <div class="mode-list" role="radiogroup" aria-label="View control mode">
         <label class="mode-card">
           <input type="radio" name="cleanupMode" value="safe" />
           <span class="mode-content">
@@ -43,28 +71,51 @@
         <label for="keepRounds" data-i18n="keepRoundsLabel">Keep only recent:</label>
         <input type="number" id="keepRounds" min="1" max="100" value="10" />
         <span class="input-hint" data-i18n="roundsUnit">rounds</span>
-      </div>
 
-      <label class="checkbox-label">
-        <input type="checkbox" id="autoMaintain" />
-        <span class="checkbox-text" data-i18n="autoMaintainLabel">Auto-maintain while chatting</span>
-      </label>
-    </section>
-
-    <section class="metrics-section" aria-live="polite">
-      <div class="metric">
-        <span class="metric-label" data-i18n="optimizedRoundsLabel">Optimized</span>
-        <strong id="optimizedRounds">0</strong>
-      </div>
-      <div class="metric">
-        <span class="metric-label" data-i18n="domReductionLabel">View reduced</span>
-        <strong id="domReduction">0%</strong>
+        <label class="checkbox-label inline-checkbox">
+          <input type="checkbox" id="autoMaintain" />
+          <span class="checkbox-text" data-i18n="autoMaintainLabel">Auto-maintain while chatting</span>
+        </label>
       </div>
     </section>
 
-    <button id="removeOldRounds" class="btn btn-primary" data-i18n="cleanButton">
-      Apply view control
-    </button>
+    <section class="settings-section feedback-section">
+      <div class="section-label" data-i18n="nextFeatureTitle">What do you want next?</div>
+      <div id="featureInterestEditor">
+        <div class="feedback-grid" aria-label="Feature interests">
+          <label class="interest-option">
+            <input type="checkbox" name="nextFeatureInterest" value="search" />
+            <span data-i18n="nextFeatureSearch">Search</span>
+          </label>
+          <label class="interest-option">
+            <input type="checkbox" name="nextFeatureInterest" value="outline" />
+            <span data-i18n="nextFeatureOutline">Outline</span>
+          </label>
+          <label class="interest-option">
+            <input type="checkbox" name="nextFeatureInterest" value="navigation" />
+            <span data-i18n="nextFeatureNavigation">Navigation</span>
+          </label>
+          <label class="interest-option">
+            <input type="checkbox" name="nextFeatureInterest" value="codeFolding" />
+            <span data-i18n="nextFeatureCodeFolding">Code folding</span>
+          </label>
+          <label class="interest-option">
+            <input type="checkbox" name="nextFeatureInterest" value="imageFolding" />
+            <span data-i18n="nextFeatureImageFolding">Image folding</span>
+          </label>
+        </div>
+        <button id="saveFeatureInterests" type="button" class="link-button" data-i18n="nextFeatureSave">Save interests</button>
+        <p class="feedback-note" data-i18n="nextFeatureNote">Saved locally on this browser.</p>
+      </div>
+
+      <div id="featureInterestSummary" class="interest-summary" hidden>
+        <div>
+          <div id="featureInterestSummaryList" class="interest-summary-list"></div>
+          <p id="featureInterestProgress" class="feedback-note"></p>
+        </div>
+        <button id="editFeatureInterests" type="button" class="link-button" data-i18n="nextFeatureEdit">Edit</button>
+      </div>
+    </section>
 
     <div id="status" class="status"></div>
   </main>

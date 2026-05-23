@@ -15,24 +15,36 @@
     "message": "长对话视图控制",
     "description": "弹窗副标题"
   },
+  "v130IntroTitle": {
+    "message": "长对话控制已升级",
+    "description": "v1.3 一次性更新说明标题"
+  },
+  "v130IntroBody": {
+    "message": "原来的清理流程仍然保留。本次更新增加了更安全的视觉隐藏、当前状态统计和更清晰的长对话控制。",
+    "description": "v1.3 一次性更新说明正文"
+  },
+  "v130IntroAction": {
+    "message": "开始使用",
+    "description": "v1.3 一次性更新说明关闭按钮"
+  },
   "modeSectionTitle": {
-    "message": "视图控制",
+    "message": "控制模式",
     "description": "处理模式区域标题"
   },
   "safeModeTitle": {
-    "message": "视觉控制",
+    "message": "视觉隐藏（推荐）",
     "description": "视觉控制模式标题"
   },
   "safeModeDesc": {
-    "message": "仅在视觉上隐藏旧轮次。最安全，也最容易恢复。",
+    "message": "只在屏幕上隐藏旧轮次。最安全，也最容易恢复。",
     "description": "视觉控制模式说明"
   },
   "removeModeTitle": {
-    "message": "刷新恢复",
+    "message": "临时裁剪（高级）",
     "description": "移除模式标题"
   },
   "removeModeDesc": {
-    "message": "高级：从当前视图丢弃旧轮次，刷新 ChatGPT 后恢复。",
+    "message": "临时整理当前视图中的旧轮次，刷新 ChatGPT 后恢复。",
     "description": "移除模式说明"
   },
   "safeModeSelected": {
@@ -59,6 +71,22 @@
       "TOTAL": { "content": "$2", "example": "27" }
     }
   },
+  "currentViewTitle": {
+    "message": "当前状态",
+    "description": "当前视图状态区域标题"
+  },
+  "visibleRoundsLabel": {
+    "message": "显示",
+    "description": "可见轮数指标标签"
+  },
+  "visibleRoundsValue": {
+    "message": "$VISIBLE$ / $TOTAL$ 轮",
+    "description": "可见轮数和总轮数指标值",
+    "placeholders": {
+      "VISIBLE": { "content": "$1", "example": "3" },
+      "TOTAL": { "content": "$2", "example": "17" }
+    }
+  },
   "optimizedRoundsLabel": {
     "message": "已隐藏",
     "description": "已隐藏轮数指标标签"
@@ -75,7 +103,7 @@
     }
   },
   "cleanButton": {
-    "message": "应用视图控制",
+    "message": "立即整理对话",
     "description": "应用视图控制按钮文本"
   },
   "errorKeepRoundsRange": {
@@ -121,7 +149,7 @@
     }
   },
   "successCleanedDetailed": {
-    "message": "已移除 $REMOVED$ 轮旧对话，保留最近 $KEPT$ 轮",
+    "message": "已整理当前视图：隐藏 $REMOVED$ 轮旧对话，保留最近 $KEPT$ 轮可见",
     "description": "刷新恢复模式成功的详细消息",
     "placeholders": {
       "REMOVED": { "content": "$1", "example": "5" },
@@ -137,11 +165,11 @@
     }
   },
   "errorCleanFailed": {
-    "message": "视图控制失败：",
+    "message": "无法整理当前视图：",
     "description": "视图控制失败的错误前缀"
   },
   "autoMaintainLabel": {
-    "message": "对话中自动保持上限",
+    "message": "自动保持上限",
     "description": "自动保持复选框标签"
   },
   "autoMaintainEnabled": {
@@ -154,6 +182,136 @@
   "autoMaintainDisabled": {
     "message": "已关闭自动保持",
     "description": "自动保持关闭时的状态消息"
+  },
+  "nextFeatureTitle": {
+    "message": "我感兴趣的能力",
+    "description": "功能兴趣区域标题"
+  },
+  "nextFeatureSearch": {
+    "message": "搜索消息",
+    "description": "搜索功能兴趣选项"
+  },
+  "nextFeatureOutline": {
+    "message": "自动生成大纲",
+    "description": "大纲功能兴趣选项"
+  },
+  "nextFeatureNavigation": {
+    "message": "对话导航",
+    "description": "导航功能兴趣选项"
+  },
+  "nextFeatureCodeFolding": {
+    "message": "折叠代码块",
+    "description": "代码折叠功能兴趣选项"
+  },
+  "nextFeatureImageFolding": {
+    "message": "折叠图片",
+    "description": "图片折叠功能兴趣选项"
+  },
+  "nextFeatureNote": {
+    "message": "仅用于记录你的偏好，只保存在此浏览器本地。",
+    "description": "功能兴趣隐私提示"
+  },
+  "nextFeatureSave": {
+    "message": "保存关注",
+    "description": "保存未来能力兴趣按钮"
+  },
+  "nextFeatureEdit": {
+    "message": "修改",
+    "description": "修改已保存未来能力兴趣按钮"
+  },
+  "nextFeatureNone": {
+    "message": "尚未标记关注",
+    "description": "已保存未来能力兴趣空状态"
+  },
+  "nextFeatureProgress": {
+    "message": "已上线：0 / $COUNT$",
+    "description": "已保存未来能力兴趣进度文本",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "2" }
+    }
+  },
+  "nextFeatureSaved": {
+    "message": "偏好已保存在本地",
+    "description": "保存功能兴趣后的状态消息"
+  },
+  "panelButton": {
+    "message": "对话",
+    "description": "对话面板浮动按钮"
+  },
+  "panelTitle": {
+    "message": "对话工具",
+    "description": "对话面板标题"
+  },
+  "panelSubtitle": {
+    "message": "搜索、大纲和导航",
+    "description": "对话面板副标题"
+  },
+  "panelClose": {
+    "message": "关闭",
+    "description": "对话面板关闭按钮"
+  },
+  "panelSearch": {
+    "message": "搜索",
+    "description": "对话面板搜索标签"
+  },
+  "panelOutline": {
+    "message": "大纲",
+    "description": "对话面板大纲标签"
+  },
+  "panelNavigation": {
+    "message": "导航",
+    "description": "对话面板导航标签"
+  },
+  "panelSearchPlaceholder": {
+    "message": "搜索消息",
+    "description": "对话面板搜索输入占位文本"
+  },
+  "panelSearchEmpty": {
+    "message": "输入关键词搜索已加载消息。",
+    "description": "对话面板空搜索提示"
+  },
+  "panelSearchNoResults": {
+    "message": "当前已加载消息中没有结果。",
+    "description": "对话面板无搜索结果提示"
+  },
+  "panelOutlineEmpty": {
+    "message": "暂未找到大纲条目。",
+    "description": "对话面板空大纲提示"
+  },
+  "panelJumpLatest": {
+    "message": "最新",
+    "description": "对话面板跳转最新按钮"
+  },
+  "panelJumpOldest": {
+    "message": "最旧可见",
+    "description": "对话面板跳转最旧可见按钮"
+  },
+  "panelRefresh": {
+    "message": "刷新",
+    "description": "对话面板刷新按钮"
+  },
+  "panelHidden": {
+    "message": "已隐藏",
+    "description": "对话面板隐藏结果标记"
+  },
+  "panelAssistant": {
+    "message": "助手",
+    "description": "对话面板助手角色标签"
+  },
+  "panelUser": {
+    "message": "用户",
+    "description": "对话面板用户角色标签"
+  },
+  "panelUnknown": {
+    "message": "消息",
+    "description": "对话面板通用消息标签"
+  },
+  "panelMessageCount": {
+    "message": "已索引 $COUNT$ 条已加载消息",
+    "description": "对话面板已索引消息数量",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "42" }
+    }
   },
   "hiddenOlderMessages": {
     "message": "已隐藏旧消息（$ROUNDS$ 轮）",
