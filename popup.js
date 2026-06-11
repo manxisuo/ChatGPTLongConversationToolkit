@@ -7,7 +7,7 @@ const FEEDBACK_SURVEY_URLS = {
   zh: 'https://tally.so/r/ZjZYAv',
   en: 'https://tally.so/r/2EDLp9'
 };
-let isV130IntroVisible = false;
+let isV140IntroVisible = false;
 let isFeatureFeedbackCompleted = false;
 
 function getMessage(key, substitutions = []) {
@@ -79,17 +79,17 @@ async function loadSettings() {
     autoMaintain: false,
     cleanupMode: CLEANUP_MODES.SAFE,
     collapseOldMessages: true,
-    showV130Intro: false
+    showV140Intro: false
   });
   document.getElementById('keepRounds').value = result.keepRounds;
   document.getElementById('autoMaintain').checked = result.autoMaintain;
   setSelectedMode(resolveCleanupMode(result));
-  renderV130Intro(result.showV130Intro);
+  renderV140Intro(result.showV140Intro);
 }
 
-function renderV130Intro(showIntro) {
-  isV130IntroVisible = Boolean(showIntro);
-  const intro = document.getElementById('v130Intro');
+function renderV140Intro(showIntro) {
+  isV140IntroVisible = Boolean(showIntro);
+  const intro = document.getElementById('v140Intro');
   if (intro) intro.hidden = !showIntro;
   renderFeedbackSectionVisibility();
 }
@@ -97,7 +97,7 @@ function renderV130Intro(showIntro) {
 function renderFeedbackSectionVisibility() {
   const feedback = document.querySelector('.feedback-section');
   if (feedback) {
-    feedback.hidden = isV130IntroVisible || isFeatureFeedbackCompleted;
+    feedback.hidden = isV140IntroVisible || isFeatureFeedbackCompleted;
   }
 }
 
@@ -274,9 +274,9 @@ document.getElementById('autoMaintain').addEventListener('change', async () => {
 document.getElementById('featureFeedbackSubmit').addEventListener('click', openFeatureFeedbackSurvey);
 document.getElementById('featureFeedbackDone').addEventListener('click', markFeatureFeedbackCompleted);
 
-document.getElementById('dismissV130Intro').addEventListener('click', async () => {
-  await chrome.storage.local.set({ showV130Intro: false });
-  renderV130Intro(false);
+document.getElementById('dismissV140Intro').addEventListener('click', async () => {
+  await chrome.storage.local.set({ showV140Intro: false });
+  renderV140Intro(false);
 });
 
 async function checkContentScript(tabId) {
@@ -287,6 +287,24 @@ async function checkContentScript(tabId) {
     return false;
   }
 }
+
+document.getElementById('openConversationNavigator').addEventListener('click', async () => {
+  try {
+    const tab = await getCurrentTab();
+    if (!tab?.url?.includes('chat.openai.com') && !tab?.url?.includes('chatgpt.com')) {
+      showStatus(getMessage('errorNotChatGPT'), 'error');
+      return;
+    }
+    if (!await checkContentScript(tab.id)) {
+      showStatus(getMessage('errorScriptLoad'), 'error');
+      return;
+    }
+    await chrome.tabs.sendMessage(tab.id, { action: 'openConversationNavigator' });
+    window.close();
+  } catch (error) {
+    showStatus(getMessage('errorOperationFailedRetry'), 'error');
+  }
+});
 
 document.getElementById('removeOldRounds').addEventListener('click', async () => {
   try {

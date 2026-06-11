@@ -12,20 +12,24 @@
     "description": "Popup title"
   },
   "subtitle": {
-    "message": "Long conversation control",
+    "message": "Search, bookmarks, and long conversation view control",
     "description": "Popup subtitle"
   },
-  "v130IntroTitle": {
-    "message": "Long conversation control has been improved",
-    "description": "One-time v1.3 update intro title"
+  "viewManagementTitle": {
+    "message": "Conversation view management",
+    "description": "Popup view management feature group title"
   },
-  "v130IntroBody": {
-    "message": "The original cleanup workflow is still here. This update adds safer visual hiding, current view status, and clearer long conversation controls.",
-    "description": "One-time v1.3 update intro body"
+  "v140IntroTitle": {
+    "message": "Conversation Navigator is here",
+    "description": "One-time v1.4 update intro title"
   },
-  "v130IntroAction": {
+  "v140IntroBody": {
+    "message": "Search loaded messages, jump to hidden content, and bookmark important messages locally.",
+    "description": "One-time v1.4 update intro body"
+  },
+  "v140IntroAction": {
     "message": "Start using",
-    "description": "One-time v1.3 update intro dismiss action"
+    "description": "One-time v1.4 update intro dismiss action"
   },
   "modeSectionTitle": {
     "message": "Control mode",
@@ -105,6 +109,18 @@
   "cleanButton": {
     "message": "Organize conversation now",
     "description": "Apply view control button text"
+  },
+  "searchEntryTitle": {
+    "message": "Conversation Navigator",
+    "description": "Popup navigator entry title"
+  },
+  "searchEntryDesc": {
+    "message": "Search, bookmark, and jump to important content.",
+    "description": "Popup navigator entry description"
+  },
+  "searchEntryAction": {
+    "message": "Open →",
+    "description": "Popup navigator entry action"
   },
   "errorKeepRoundsRange": {
     "message": "Keep exchanges must be between 1-100",
@@ -208,24 +224,28 @@
     "description": "Privacy reassurance shown in the feedback survey entry"
   },
   "panelButton": {
-    "message": "Conversation",
-    "description": "Floating conversation panel button"
+    "message": "Navigator",
+    "description": "Floating conversation navigator button"
   },
   "panelTitle": {
-    "message": "Conversation Tools",
-    "description": "Conversation panel title"
+    "message": "Conversation Navigator",
+    "description": "Conversation navigator panel title"
   },
   "panelSubtitle": {
-    "message": "Search, outline, and navigation",
-    "description": "Conversation panel subtitle"
+    "message": "Search, bookmark, and jump to important content",
+    "description": "Conversation navigator panel subtitle"
   },
   "panelClose": {
     "message": "Close",
     "description": "Conversation panel close button"
   },
   "panelSearch": {
-    "message": "Search",
-    "description": "Conversation panel search tab"
+    "message": "Search messages",
+    "description": "Conversation Navigator search tool label"
+  },
+  "panelBookmarks": {
+    "message": "Bookmarks",
+    "description": "Conversation Navigator bookmarks tab"
   },
   "panelOutline": {
     "message": "Outline",
@@ -236,16 +256,98 @@
     "description": "Conversation panel navigation tab"
   },
   "panelSearchPlaceholder": {
-    "message": "Search messages",
+    "message": "Search within current conversation",
     "description": "Conversation panel search input placeholder"
   },
   "panelSearchEmpty": {
-    "message": "Type to search loaded messages.",
+    "message": "Search by keyword to find matching messages.",
     "description": "Conversation panel empty search hint"
   },
   "panelSearchNoResults": {
-    "message": "No results in currently loaded messages.",
+    "message": "No matching messages",
     "description": "Conversation panel no search results hint"
+  },
+  "panelSearchPrevious": {
+    "message": "Previous",
+    "description": "Previous search match action"
+  },
+  "panelSearchNext": {
+    "message": "Next",
+    "description": "Next search match action"
+  },
+  "panelSearchClear": {
+    "message": "Clear",
+    "description": "Clear conversation search action"
+  },
+  "panelSearchResultCount": {
+    "message": "$COUNT$ matching messages",
+    "description": "Number of matching messages in the navigator",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "12" }
+    }
+  },
+  "panelSearchScope": {
+    "message": "Navigator only covers content currently available on the page.",
+    "description": "Loaded conversation navigator capability boundary"
+  },
+  "panelSearchLimit": {
+    "message": "Too many matches. Showing the first results.",
+    "description": "Search result limit notice"
+  },
+  "panelTemporaryReveal": {
+    "message": "This hidden message is temporarily shown. Auto-maintain remains active.",
+    "description": "Notice shown when Navigator temporarily reveals a hidden message"
+  },
+  "panelResultUser": {
+    "message": "User",
+    "description": "User message result label"
+  },
+  "panelResultAssistant": {
+    "message": "Assistant",
+    "description": "Assistant message result label"
+  },
+  "panelResultMessage": {
+    "message": "Message",
+    "description": "Generic message result label"
+  },
+  "panelResultHidden": {
+    "message": "Hidden",
+    "description": "Hidden message result label"
+  },
+  "panelResultMatches": {
+    "message": "$COUNT$ matches",
+    "description": "Keyword match count within one message",
+    "placeholders": {
+      "COUNT": { "content": "$1", "example": "3" }
+    }
+  },
+  "bookmarkAddAction": {
+    "message": "Bookmark",
+    "description": "Add bookmark action shown on a conversation message"
+  },
+  "bookmarkRemoveAction": {
+    "message": "Bookmarked",
+    "description": "Active bookmark action shown on a bookmarked message"
+  },
+  "bookmarkCancelAction": {
+    "message": "Remove bookmark",
+    "description": "Tooltip for removing a bookmark from a message"
+  },
+  "bookmarkEmpty": {
+    "message": "No bookmarks in this conversation yet.",
+    "description": "Empty bookmarks tab message"
+  },
+  "bookmarkUnavailable": {
+    "message": "Not available in the current page",
+    "description": "Bookmark target is not currently loaded in the page"
+  },
+  "bookmarkImagePreview": {
+    "message": "Image",
+    "description": "Bookmark preview for an image-only message"
+  },
+  "bookmarkRemove": {
+    "message": "Remove bookmark",
+    "description": "Remove bookmark button label"
   },
   "panelOutlineEmpty": {
     "message": "No outline items found yet.",

@@ -20,9 +20,16 @@ The extension no longer treats performance cleanup as the core product promise. 
 - Configurable recent-exchange limit, defaulting to 10 exchanges
 - Visual Hide: lowest risk, expandable in place
 - Temporary Trim: strongest page reduction, restored by refreshing ChatGPT
+- Conversation Navigator with message-level search and local bookmarks
 - Optional auto-maintain mode for long sessions
 - Conversation exchange count badge
 - English and Simplified Chinese UI
+
+The Navigator shows matching User and Assistant messages with context previews, rather than only stepping through text matches. It only covers conversation content currently available in the ChatGPT page. With auto-maintain enabled, a hidden result is temporarily revealed without changing the hidden count or disabling the limit; it is hidden again when navigation moves away or closes. Content removed by Temporary Trim is not searchable until the page is refreshed.
+
+Each loaded User or Assistant message can be bookmarked. Bookmarks store only the conversation/message identifiers, a short preview, role, and timestamp in `chrome.storage.local`. They are not uploaded.
+
+The Navigator keeps Search and Bookmarks as separate tabs. The Bookmarks tab always shows the current conversation's bookmark count.
 
 ## Privacy
 
@@ -60,6 +67,17 @@ All behavior runs locally in the browser page. The extension does not store conv
 5. Click Apply view control
 
 Visual Hide shows an expandable placeholder for older messages. Temporary Trim leaves a non-expandable placeholder.
+
+To navigate the current conversation:
+
+1. Click the extension icon
+2. Click Open navigator
+3. Enter a keyword to see matching messages
+4. Click a User or Assistant result to jump directly to that message
+
+Search terms are not stored. Bookmark identifiers, short previews, roles, and timestamps are stored locally and are never uploaded.
+
+Use the Bookmark action on a message to save it locally. Open the Bookmarks tab in the Navigator to revisit or remove saved messages.
 
 ## Roadmap Principle
 

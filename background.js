@@ -50,7 +50,8 @@ chrome.runtime.onInstalled.addListener((details) => {
       enabled: true,
       autoRemove: false,
       cleanupMode: 'safe',
-      collapseOldMessages: true
+      collapseOldMessages: true,
+      showV140Intro: true
     });
   } else if (details.reason === 'update') {
     chrome.storage.local.get({ cleanupMode: null }, (settings) => {
@@ -62,8 +63,10 @@ chrome.runtime.onInstalled.addListener((details) => {
       }
     });
 
-    if (details.previousVersion && details.previousVersion !== '1.3.0') {
-      chrome.storage.local.set({ showV130Intro: true });
+    if (details.previousVersion && details.previousVersion !== '1.4.0') {
+      chrome.storage.local.set({
+        showV140Intro: true
+      });
     }
   }
 });

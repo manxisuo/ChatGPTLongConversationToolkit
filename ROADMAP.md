@@ -224,21 +224,45 @@ Release principle:
 v1.3 is a low-risk positioning and maintenance release.
 ```
 
-## v1.4: Loaded Navigation
+## v1.4: Conversation Navigator - Search + Basic Bookmarks
 
 Goal:
 
 ```text
-Add navigation for currently loaded conversation content.
+Help users find and return to important content in a long loaded conversation.
 ```
 
-Candidate features:
+Product structure:
 
-- Loaded Conversation Search.
-- Message-level search results.
-- Click-to-jump.
-- Quick jump latest / oldest visible.
-- Code block folding.
+```text
+Conversation Navigator
+|- Search
+`- Bookmarks
+```
+
+Ship:
+
+- Message-level keyword search results.
+- User and Assistant role labels with context previews.
+- Click-to-jump from a result to its message.
+- Previous and next message-result navigation.
+- Non-destructive keyword highlighting.
+- Visual Hide integration: temporarily reveal a hidden result while auto-maintain stays active, or restore normally when auto-maintain is off.
+- A basic local Bookmark action on loaded User and Assistant messages.
+- Search and Bookmarks tabs inside the Conversation Navigator.
+- Bookmark previews, role labels, timestamps, jump-to-message, and removal.
+- Clear bookmark states: unbookmarked, bookmarked, and remove bookmark.
+- Bookmark count in the Navigator tab.
+- Bookmark fallback location using message ID, role and preview, then message index.
+- A reusable Conversation Navigator panel that can later host Outline.
+- A clear notice that navigation only covers content currently available on the page.
+
+Product principle:
+
+```text
+Do not build Search as a standalone Ctrl+F replacement.
+Build Navigator; Search and Bookmarks are its first management capabilities.
+```
 
 Naming requirement:
 
@@ -251,28 +275,85 @@ Do not promise:
 - Complete history search.
 - Search across unrendered ChatGPT messages.
 - Search across conversations.
+- Semantic or AI-powered search.
+- Regular expression or advanced query syntax.
 
-## v1.5: Reading And Orientation
+Do not add to v1.4:
+
+- Outline.
+- Tags, categories, folders, or bookmark notes.
+- AI summaries or AI-generated outlines.
+- Export.
+- Cloud sync.
+- Cross-conversation search.
+
+Release positioning:
+
+```text
+ChatGPT Long Conversation Toolkit 1.4.0 - Conversation Navigator
+Search long conversations, jump to hidden or visible messages,
+bookmark important content, and return to it quickly.
+```
+
+## v1.5: Navigation And Outline
 
 Goal:
 
 ```text
-Make long loaded conversations easier to scan.
+Help users understand and move through the structure of currently loaded conversation content.
+```
+
+Candidate sources:
+
+- Segment by user messages.
+- Add a stable node every N conversation exchanges when useful.
+- Extract Assistant Markdown headings.
+- Extract section headings from long answers.
+- Click an outline item to jump to its source message.
+
+First-release boundary:
+
+```text
+Use deterministic, explainable rules.
+Do not require an AI model, backend, or full-history loading.
+```
+
+## v1.6: Enhanced Bookmarks
+
+Goal:
+
+```text
+Extend validated bookmark usage without turning v1.4 into a full management system.
 ```
 
 Candidate features:
 
-- Mini-map.
-- Visible Conversation Outline.
-- Bookmarks.
-- Highlights.
-- Current position indicator.
-- Compact reading controls.
+- Bookmark management.
+- Categories or tags.
+- Bookmark notes.
+- Bookmark renaming.
+- Bookmark search.
+- Better bookmark navigation.
 
-Outline boundary:
+## v1.7: AI-Assisted Organization
+
+Goal:
 
 ```text
-The outline is structural and local. It should not claim deep topic understanding.
+Use optional AI assistance to reduce cognitive load in long conversations.
+```
+
+Candidate features:
+
+- AI-generated outlines.
+- AI summaries.
+- AI-assisted navigation.
+
+Decision boundary:
+
+```text
+Do not prioritize this until privacy, API choice, cost,
+latency, and model quality are acceptable.
 ```
 
 ## v2.x: Conversation Workspace Exploration
@@ -302,25 +383,25 @@ Done:
 - Removed Local Snapshot from the product surface.
 - Added Visual Control and Refresh Restore framing.
 - Added local-only feature interest settings.
-- Built an experimental in-page Conversation Tools panel.
-- Built an experimental local message extractor.
-- Built experimental Loaded Search / Outline / Navigation prototypes.
+- Built the Conversation Navigator foundation.
+- Built message-level loaded conversation search.
+- Added basic local bookmarks for loaded User and Assistant messages.
 
 Release boundary:
 
 ```text
-The experimental Conversation Tools panel is disabled by default and should not ship as a default v1.3 feature.
+Navigator features operate only on content currently available in the page.
 ```
 
 ## Current Next Step
 
 Immediate actions:
 
-1. Prepare v1.3 as a stable repositioning release.
-2. Keep Search / Outline behind an experimental flag.
-3. Update store screenshots and promo copy away from performance claims.
-4. Validate real user interest using the local feature interest section.
-5. Decide whether v1.4 should prioritize Loaded Search, Code Block Folding, or Quick Jump based on feedback.
+1. Validate Search + Basic Bookmarks as the v1.4 conversation-management foundation.
+2. Test bookmark identity and navigation across Visual Hide, refresh, and Temporary Trim.
+3. Update store screenshots and copy around conversation navigation and preservation.
+4. Keep categories, notes, and bookmark management out of v1.4.
+5. Prepare Navigation and Outline work for v1.5.
 
 ## Engineering Policy
 

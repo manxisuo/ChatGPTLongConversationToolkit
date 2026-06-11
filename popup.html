@@ -15,11 +15,21 @@
       </div>
     </header>
 
-    <section id="v130Intro" class="intro-card" hidden>
-      <div class="intro-title" data-i18n="v130IntroTitle">Long conversation control has been improved</div>
-      <p data-i18n="v130IntroBody">The original cleanup workflow is still here. This update adds safer visual hiding, current view status, and clearer long conversation controls.</p>
-      <button id="dismissV130Intro" type="button" class="link-button intro-action" data-i18n="v130IntroAction">Start using</button>
+    <section id="v140Intro" class="intro-card" hidden>
+      <div class="intro-title" data-i18n="v140IntroTitle">Conversation Navigator is here</div>
+      <p data-i18n="v140IntroBody">Search loaded messages, jump to hidden content, and bookmark important messages locally.</p>
+      <button id="dismissV140Intro" type="button" class="link-button intro-action" data-i18n="v140IntroAction">Start using</button>
     </section>
+
+    <section class="navigator-entry">
+      <div>
+        <div class="navigator-entry-title" data-i18n="searchEntryTitle">Conversation Navigator</div>
+        <div class="navigator-entry-desc" data-i18n="searchEntryDesc">Search, bookmark, and jump to important content.</div>
+      </div>
+      <button id="openConversationNavigator" type="button" class="btn btn-primary navigator-entry-button" data-i18n="searchEntryAction">Open →</button>
+    </section>
+
+    <div class="feature-group-title" data-i18n="viewManagementTitle">Conversation view management</div>
 
     <section class="status-card" aria-live="polite">
       <div class="section-label" data-i18n="currentViewTitle">Current view</div>
@@ -38,11 +48,6 @@
         </div>
       </div>
     </section>
-
-    <button id="removeOldRounds" class="btn btn-primary primary-action">
-      <span class="btn-icon" aria-hidden="true">✦</span>
-      <span data-i18n="cleanButton">Apply view control</span>
-    </button>
 
     <section class="settings-section">
       <div class="section-label" data-i18n="modeSectionTitle">Mode</div>
@@ -78,6 +83,11 @@
         </label>
       </div>
     </section>
+
+    <button id="removeOldRounds" class="btn btn-outline view-control-action">
+      <span class="btn-icon" aria-hidden="true">✦</span>
+      <span data-i18n="cleanButton">Apply view control</span>
+    </button>
 
     <section class="settings-section feedback-section">
       <div id="featureFeedbackPanel" class="feature-feedback-panel" hidden>
