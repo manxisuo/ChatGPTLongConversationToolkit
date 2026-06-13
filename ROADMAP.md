@@ -99,6 +99,16 @@ The product should solve problems users actually feel in long conversations:
 - Marking important sections for later.
 - Extracting decisions, TODOs, and useful snippets.
 
+## Validated User Demand
+
+Recent questionnaire feedback further validates the direction of the roadmap and clarifies the current priority order:
+
+- Highest demand: Search, Navigation.
+- Validated demand: Outline, Export.
+- Lower demand for now: AI Summary.
+
+This supports continuing with Conversation Navigator as the immediate foundation, followed by deterministic structure and portable output. AI-assisted features should remain later-stage options rather than displacing Outline, Export, or Knowledge Organization.
+
 ## Product Layers
 
 ### Layer 1: Reading Experience
@@ -137,6 +147,7 @@ Candidate features:
 - Quick jump.
 - Section anchors.
 - Current visible region indicator.
+- Last Position / Continue Reading: remember the user's last reading or interaction position and provide a quick way to return.
 
 Important boundary:
 
@@ -295,15 +306,16 @@ Search long conversations, jump to hidden or visible messages,
 bookmark important content, and return to it quickly.
 ```
 
-## v1.5: Navigation And Outline
+## v1.5: Outline + Export
 
 Goal:
 
 ```text
-Help users understand and move through the structure of currently loaded conversation content.
+Help users turn long conversations into understandable, navigable,
+saveable, and portable structured content.
 ```
 
-Candidate sources:
+Outline candidates:
 
 - Segment by user messages.
 - Add a stable node every N conversation exchanges when useful.
@@ -311,19 +323,34 @@ Candidate sources:
 - Extract section headings from long answers.
 - Click an outline item to jump to its source message.
 
+Export candidates:
+
+- Export currently available conversation content to Markdown.
+- Preserve User and Assistant roles and message order.
+- Preserve useful structure such as headings, code blocks, and links where practical.
+- Allow users to save or migrate useful long-conversation content without a backend.
+- State clearly when exported content is limited to what is currently available on the page.
+
+Lightweight navigation candidate:
+
+- Last Position / Continue Reading.
+- Remember the user's last reading or interaction position locally.
+- Provide a one-click return without requiring a full conversation index.
+
 First-release boundary:
 
 ```text
 Use deterministic, explainable rules.
-Do not require an AI model, backend, or full-history loading.
+Do not require an AI model, backend, cloud storage, or full-history loading.
 ```
 
-## v1.6: Enhanced Bookmarks
+## v1.6: Knowledge Organization
 
 Goal:
 
 ```text
-Extend validated bookmark usage without turning v1.4 into a full management system.
+Turn validated bookmarks into lightweight local knowledge organization
+without expanding into a full cross-conversation workspace.
 ```
 
 Candidate features:
@@ -334,6 +361,7 @@ Candidate features:
 - Bookmark renaming.
 - Bookmark search.
 - Better bookmark navigation.
+- Lightweight organization of saved answers, decisions, code snippets, and solutions.
 
 ## v1.7: AI-Assisted Organization
 
@@ -356,6 +384,14 @@ Do not prioritize this until privacy, API choice, cost,
 latency, and model quality are acceptable.
 ```
 
+Current priority:
+
+```text
+AI Summary has lower validated demand for now.
+Do not move AI-assisted work ahead of Outline, Export,
+or Knowledge Organization.
+```
+
 ## v2.x: Conversation Workspace Exploration
 
 Only explore this if users clearly ask for:
@@ -364,6 +400,13 @@ Only explore this if users clearly ask for:
 - Multi-conversation management.
 - Conversation archive.
 - Long-term organization.
+
+Do not bring these large product-surface capabilities into the v1.x roadmap prematurely:
+
+- Cross-conversation search.
+- Automatic local archiving.
+- Complete conversation indexing.
+- Full multi-conversation knowledge management.
 
 Candidate architecture:
 
@@ -401,7 +444,8 @@ Immediate actions:
 2. Test bookmark identity and navigation across Visual Hide, refresh, and Temporary Trim.
 3. Update store screenshots and copy around conversation navigation and preservation.
 4. Keep categories, notes, and bookmark management out of v1.4.
-5. Prepare Navigation and Outline work for v1.5.
+5. Prepare deterministic Outline and local Export work for v1.5.
+6. Evaluate Last Position / Continue Reading as a low-cost navigation improvement.
 
 ## Engineering Policy
 

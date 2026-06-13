@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "Control, collapse, and manage long ChatGPT conversations.",
+    "message": "Search, bookmark, navigate, and manage long ChatGPT conversations.",
     "description": "Extension description"
   },
   "title": {
@@ -20,16 +20,20 @@
     "description": "Popup view management feature group title"
   },
   "v140IntroTitle": {
-    "message": "Conversation Navigator is here",
+    "message": "New: Conversation Navigator",
     "description": "One-time v1.4 update intro title"
   },
   "v140IntroBody": {
-    "message": "Search loaded messages, jump to hidden content, and bookmark important messages locally.",
+    "message": "Find important messages in long conversations. Search, bookmark, and jump back to answers instantly.",
     "description": "One-time v1.4 update intro body"
   },
   "v140IntroAction": {
-    "message": "Start using",
+    "message": "Open now",
     "description": "One-time v1.4 update intro dismiss action"
+  },
+  "v140IntroChatGPTOnly": {
+    "message": "Conversation Navigator is available on ChatGPT pages only. Open a ChatGPT conversation to try it.",
+    "description": "Message shown when the v1.4 intro action is used outside a ChatGPT page"
   },
   "modeSectionTitle": {
     "message": "Control mode",
@@ -198,30 +202,6 @@
   "autoMaintainDisabled": {
     "message": "Auto-maintain disabled",
     "description": "Status message when auto-maintain is disabled"
-  },
-  "featureFeedbackTitle": {
-    "message": "💡 Suggest Features",
-    "description": "Feature feedback survey entry title"
-  },
-  "featureFeedbackSubtitle": {
-    "message": "Tell us what you'd like next",
-    "description": "Feature feedback survey entry subtitle"
-  },
-  "featureFeedbackSubmit": {
-    "message": "Give Feedback",
-    "description": "Feature feedback survey entry submit action"
-  },
-  "featureFeedbackDone": {
-    "message": "I've Submitted",
-    "description": "Feature feedback survey entry completion action"
-  },
-  "featureFeedbackDoneConfirm": {
-    "message": "Feedback completed? This entry will no longer be shown.",
-    "description": "Confirmation shown before permanently hiding the feedback entry"
-  },
-  "featureFeedbackPrivacy": {
-    "message": "We do not collect chat content",
-    "description": "Privacy reassurance shown in the feedback survey entry"
   },
   "panelButton": {
     "message": "Navigator",
@@ -421,6 +401,14 @@
   "domWarningMessage": {
     "message": "ChatGPT page structure may have changed. Extension is temporarily unable to work. Please contact the developer.",
     "description": "Warning shown in popup when DOM structure change is detected"
+  },
+  "footerOpenSource": {
+    "message": "Open Source",
+    "description": "Open source repository link in the popup footer"
+  },
+  "footerFeedback": {
+    "message": "Feedback",
+    "description": "Feedback survey link in the popup footer"
   },
   "badgeTitle": {
     "message": "Current conversation: $VISIBLE$ visible / $TOTAL$ total exchanges",

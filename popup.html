@@ -16,9 +16,9 @@
     </header>
 
     <section id="v140Intro" class="intro-card" hidden>
-      <div class="intro-title" data-i18n="v140IntroTitle">Conversation Navigator is here</div>
-      <p data-i18n="v140IntroBody">Search loaded messages, jump to hidden content, and bookmark important messages locally.</p>
-      <button id="dismissV140Intro" type="button" class="link-button intro-action" data-i18n="v140IntroAction">Start using</button>
+      <div class="intro-title" data-i18n="v140IntroTitle">New: Conversation Navigator</div>
+      <p data-i18n="v140IntroBody">Find important messages in long conversations. Search, bookmark, and jump back to answers instantly.</p>
+      <button id="dismissV140Intro" type="button" class="link-button intro-action" data-i18n="v140IntroAction">Open now</button>
     </section>
 
     <section class="navigator-entry">
@@ -89,19 +89,15 @@
       <span data-i18n="cleanButton">Apply view control</span>
     </button>
 
-    <section class="settings-section feedback-section">
-      <div id="featureFeedbackPanel" class="feature-feedback-panel" hidden>
-        <span class="feature-feedback-title" data-i18n="featureFeedbackTitle">💡 Suggest features</span>
-        <span class="feature-feedback-subtitle" data-i18n="featureFeedbackSubtitle">Help shape future updates</span>
-        <div class="feature-feedback-actions">
-          <button id="featureFeedbackSubmit" type="button" class="feature-feedback-primary" data-i18n="featureFeedbackSubmit">Give Feedback</button>
-          <button id="featureFeedbackDone" type="button" class="feature-feedback-secondary" data-i18n="featureFeedbackDone">Already gave feedback</button>
-        </div>
-        <span class="feature-feedback-privacy" data-i18n="featureFeedbackPrivacy">We do not collect chat content</span>
-      </div>
-    </section>
-
     <div id="status" class="status"></div>
+
+    <footer class="popup-footer">
+      <button id="openSourceLink" type="button" class="popup-footer-link" data-i18n="footerOpenSource">Open Source</button>
+      <span class="popup-footer-separator" aria-hidden="true">·</span>
+      <button id="footerFeedbackLink" type="button" class="popup-footer-link" data-i18n="footerFeedback">Feedback</button>
+      <span class="popup-footer-separator" aria-hidden="true">·</span>
+      <span>v1.4.0</span>
+    </footer>
   </main>
   <script src="popup.js"></script>
 </body>

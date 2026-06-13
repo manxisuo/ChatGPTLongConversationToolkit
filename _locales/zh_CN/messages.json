@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "extensionDescription": {
-    "message": "控制、折叠和管理 ChatGPT 长对话。",
+    "message": "搜索、收藏、导航和管理 ChatGPT 长对话。",
     "description": "扩展描述"
   },
   "title": {
@@ -20,16 +20,20 @@
     "description": "弹窗视图管理功能分组标题"
   },
   "v140IntroTitle": {
-    "message": "对话导航器已上线",
+    "message": "新增：对话导航器",
     "description": "v1.4 一次性更新说明标题"
   },
   "v140IntroBody": {
-    "message": "现在可以搜索已加载消息、跳转到隐藏内容，并在本地收藏重要消息。",
+    "message": "在超长对话中快速找到重要内容。搜索消息、收藏关键内容，并一键返回目标位置。",
     "description": "v1.4 一次性更新说明正文"
   },
   "v140IntroAction": {
-    "message": "开始使用",
+    "message": "立即体验",
     "description": "v1.4 一次性更新说明关闭按钮"
+  },
+  "v140IntroChatGPTOnly": {
+    "message": "对话导航器仅可在 ChatGPT 页面使用。请打开一个 ChatGPT 对话后再体验。",
+    "description": "在非 ChatGPT 页面点击 v1.4 首次引导操作时显示的提示"
   },
   "modeSectionTitle": {
     "message": "控制模式",
@@ -198,30 +202,6 @@
   "autoMaintainDisabled": {
     "message": "已关闭自动保持",
     "description": "自动保持关闭时的状态消息"
-  },
-  "featureFeedbackTitle": {
-    "message": "💡 功能建议",
-    "description": "功能反馈问卷入口标题"
-  },
-  "featureFeedbackSubtitle": {
-    "message": "告诉我们你最想要的功能",
-    "description": "功能反馈问卷入口副标题"
-  },
-  "featureFeedbackSubmit": {
-    "message": "提交建议",
-    "description": "功能反馈问卷入口提交操作"
-  },
-  "featureFeedbackDone": {
-    "message": "我已反馈",
-    "description": "功能反馈问卷入口完成操作"
-  },
-  "featureFeedbackDoneConfirm": {
-    "message": "已完成反馈？以后将不再显示此入口",
-    "description": "永久隐藏反馈入口前的确认提示"
-  },
-  "featureFeedbackPrivacy": {
-    "message": "不会收集聊天内容",
-    "description": "功能反馈问卷入口中的隐私提示"
   },
   "panelButton": {
     "message": "对话导航",
@@ -421,6 +401,14 @@
   "domWarningMessage": {
     "message": "检测到 ChatGPT 页面结构可能已更新，扩展功能暂时失效，请联系开发者。",
     "description": "DOM 结构变更时 popup 中显示的警告"
+  },
+  "footerOpenSource": {
+    "message": "开源",
+    "description": "Popup 底部的开源仓库链接"
+  },
+  "footerFeedback": {
+    "message": "反馈",
+    "description": "Popup 底部的反馈问卷链接"
   },
   "badgeTitle": {
     "message": "当前对话：显示 $VISIBLE$ / 共 $TOTAL$ 轮",

@@ -1675,6 +1675,15 @@ function collectConversationSearchResults(query) {
   for (const message of conversationPanelState.messages) {
     const anchor = findMessageAnchor(message);
     if (!anchor) continue;
+    const normalizedMessageText = message.text.toLowerCase();
+    const messageMatchCount = countTextMatches(normalizedMessageText, normalizedQuery);
+    if (messageMatchCount === 0) continue;
+    const remainingMatchCapacity = SEARCH_MATCH_LIMIT - totalMatches;
+    if (remainingMatchCapacity <= 0) {
+      limitReached = true;
+      break;
+    }
+    const acceptedMatchCount = Math.min(messageMatchCount, remainingMatchCapacity);
     const ranges = [];
     for (const textNode of getSearchableTextNodes(anchor)) {
       const normalizedText = textNode.nodeValue.toLowerCase();
@@ -1682,33 +1691,41 @@ function collectConversationSearchResults(query) {
       while (fromIndex < normalizedText.length) {
         const matchIndex = normalizedText.indexOf(normalizedQuery, fromIndex);
         if (matchIndex === -1) break;
-        if (totalMatches >= SEARCH_MATCH_LIMIT) {
-          limitReached = true;
-          break;
-        }
+        if (ranges.length >= acceptedMatchCount) break;
         const range = document.createRange();
         range.setStart(textNode, matchIndex);
         range.setEnd(textNode, matchIndex + query.length);
         ranges.push(range);
-        totalMatches += 1;
         fromIndex = matchIndex + Math.max(query.length, 1);
       }
-      if (limitReached) break;
+      if (ranges.length >= acceptedMatchCount) break;
     }
-    if (ranges.length > 0) {
-      results.push({
-        message,
-        anchor,
-        ranges,
-        matchCount: ranges.length,
-        snippet: buildSearchResultSnippet(message.text, query)
-      });
-    }
-    if (limitReached) {
-      return { results, limitReached: true };
+    totalMatches += acceptedMatchCount;
+    results.push({
+      message,
+      anchor,
+      ranges,
+      matchCount: acceptedMatchCount,
+      snippet: buildSearchResultSnippet(message.text, query)
+    });
+    if (acceptedMatchCount < messageMatchCount) {
+      limitReached = true;
+      break;
     }
   }
-  return { results, limitReached: false };
+  return { results, limitReached };
+}
+
+function countTextMatches(text, query) {
+  let count = 0;
+  let fromIndex = 0;
+  while (fromIndex < text.length) {
+    const matchIndex = text.indexOf(query, fromIndex);
+    if (matchIndex === -1) break;
+    count += 1;
+    fromIndex = matchIndex + Math.max(query.length, 1);
+  }
+  return count;
 }
 
 function applySearchHighlights() {
@@ -1817,10 +1834,13 @@ function appendSearchResultList(body) {
     role.className = 'chc-result-role';
     role.textContent = getSearchResultRoleLabel(result.message.role);
     meta.appendChild(role);
-    meta.appendChild(document.createTextNode(`#${result.message.index + 1}`));
-    meta.appendChild(document.createTextNode(
-      getMessage('panelResultMatches', [String(result.matchCount)]) || `${result.matchCount} matches`
-    ));
+    const messageNumber = document.createElement('span');
+    messageNumber.textContent = `#${result.message.index + 1}`;
+    meta.appendChild(messageNumber);
+    const matchCount = document.createElement('span');
+    matchCount.textContent =
+      getMessage('panelResultMatches', [String(result.matchCount)]) || `${result.matchCount} matches`;
+    meta.appendChild(matchCount);
     if (result.message.isHidden) {
       const hidden = document.createElement('span');
       hidden.className = 'chc-result-hidden';

@@ -7,8 +7,7 @@ const FEEDBACK_SURVEY_URLS = {
   zh: 'https://tally.so/r/ZjZYAv',
   en: 'https://tally.so/r/2EDLp9'
 };
-let isV140IntroVisible = false;
-let isFeatureFeedbackCompleted = false;
+const OPEN_SOURCE_URL = 'https://github.com/manxisuo/ChatGPTLongConversationToolkit';
 
 function getMessage(key, substitutions = []) {
   return chrome.i18n.getMessage(key, substitutions);
@@ -88,17 +87,9 @@ async function loadSettings() {
 }
 
 function renderV140Intro(showIntro) {
-  isV140IntroVisible = Boolean(showIntro);
   const intro = document.getElementById('v140Intro');
   if (intro) intro.hidden = !showIntro;
-  renderFeedbackSectionVisibility();
-}
-
-function renderFeedbackSectionVisibility() {
-  const feedback = document.querySelector('.feedback-section');
-  if (feedback) {
-    feedback.hidden = isV140IntroVisible || isFeatureFeedbackCompleted;
-  }
+  document.body.classList.toggle('intro-visible', Boolean(showIntro));
 }
 
 function getUILanguage() {
@@ -113,30 +104,8 @@ function getFeedbackSurveyUrl() {
   return lang.startsWith('zh') ? FEEDBACK_SURVEY_URLS.zh : FEEDBACK_SURVEY_URLS.en;
 }
 
-function renderFeatureFeedbackPanel(feedbackCompleted = false) {
-  const panel = document.getElementById('featureFeedbackPanel');
-  if (!panel) return;
-
-  isFeatureFeedbackCompleted = Boolean(feedbackCompleted);
-  panel.hidden = isFeatureFeedbackCompleted;
-  renderFeedbackSectionVisibility();
-}
-
-async function loadFeatureFeedbackState() {
-  const result = await chrome.storage.local.get({ feedbackCompleted: false });
-  renderFeatureFeedbackPanel(result.feedbackCompleted);
-}
-
 async function openFeatureFeedbackSurvey() {
   await chrome.tabs.create({ url: getFeedbackSurveyUrl() });
-}
-
-async function markFeatureFeedbackCompleted() {
-  if (!confirm(getMessage('featureFeedbackDoneConfirm'))) {
-    return;
-  }
-  await chrome.storage.local.set({ feedbackCompleted: true });
-  renderFeatureFeedbackPanel(true);
 }
 
 async function saveSettings() {
@@ -179,7 +148,6 @@ async function notifyAutoMaintainChange(settings = readSettingsFromForm()) {
 }
 
 loadSettings();
-loadFeatureFeedbackState();
 
 async function loadCurrentRounds() {
   try {
@@ -271,13 +239,10 @@ document.getElementById('autoMaintain').addEventListener('change', async () => {
   }
 });
 
-document.getElementById('featureFeedbackSubmit').addEventListener('click', openFeatureFeedbackSurvey);
-document.getElementById('featureFeedbackDone').addEventListener('click', markFeatureFeedbackCompleted);
-
-document.getElementById('dismissV140Intro').addEventListener('click', async () => {
-  await chrome.storage.local.set({ showV140Intro: false });
-  renderV140Intro(false);
+document.getElementById('openSourceLink').addEventListener('click', async () => {
+  await chrome.tabs.create({ url: OPEN_SOURCE_URL });
 });
+document.getElementById('footerFeedbackLink').addEventListener('click', openFeatureFeedbackSurvey);
 
 async function checkContentScript(tabId) {
   try {
@@ -288,22 +253,35 @@ async function checkContentScript(tabId) {
   }
 }
 
-document.getElementById('openConversationNavigator').addEventListener('click', async () => {
+async function openConversationNavigator({ completeIntro = false } = {}) {
   try {
     const tab = await getCurrentTab();
     if (!tab?.url?.includes('chat.openai.com') && !tab?.url?.includes('chatgpt.com')) {
-      showStatus(getMessage('errorNotChatGPT'), 'error');
-      return;
+      const messageKey = completeIntro ? 'v140IntroChatGPTOnly' : 'errorNotChatGPT';
+      showStatus(getMessage(messageKey), 'error');
+      return false;
     }
     if (!await checkContentScript(tab.id)) {
       showStatus(getMessage('errorScriptLoad'), 'error');
-      return;
+      return false;
     }
     await chrome.tabs.sendMessage(tab.id, { action: 'openConversationNavigator' });
+    if (completeIntro) {
+      await chrome.storage.local.set({ showV140Intro: false });
+      renderV140Intro(false);
+    }
     window.close();
+    return true;
   } catch (error) {
     showStatus(getMessage('errorOperationFailedRetry'), 'error');
+    return false;
   }
+}
+
+document.getElementById('openConversationNavigator').addEventListener('click', openConversationNavigator);
+
+document.getElementById('dismissV140Intro').addEventListener('click', async () => {
+  await openConversationNavigator({ completeIntro: true });
 });
 
 document.getElementById('removeOldRounds').addEventListener('click', async () => {
