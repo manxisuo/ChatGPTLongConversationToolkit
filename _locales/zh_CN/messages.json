@@ -207,6 +207,10 @@
     "message": "对话导航",
     "description": "页面内对话导航器浮动按钮"
   },
+  "panelButtonDismiss": {
+    "message": "隐藏对话导航浮动按钮",
+    "description": "在当前页面隐藏对话导航器浮动按钮的无障碍标签"
+  },
   "panelTitle": {
     "message": "对话导航器",
     "description": "对话导航器面板标题"

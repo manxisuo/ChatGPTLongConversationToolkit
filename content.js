@@ -32,6 +32,20 @@ let searchDebounceTimer = null;
 let navigatorRevealedTurn = null;
 let loadedBookmarksConversationId = '';
 let extensionContextInvalidated = false;
+const bookmarkBubbleSlots = new WeakMap();
+const bookmarkBubbleResizeObserver = typeof ResizeObserver === 'function'
+  ? new ResizeObserver((entries) => {
+      entries.forEach((entry) => {
+        const slot = bookmarkBubbleSlots.get(entry.target);
+        if (slot?.isConnected) {
+          alignUserBookmarkSlot(slot, entry.target);
+        } else {
+          bookmarkBubbleResizeObserver.unobserve(entry.target);
+          bookmarkBubbleSlots.delete(entry.target);
+        }
+      });
+    })
+  : null;
 const SEARCH_MATCH_LIMIT = 100;
 const SEARCH_HIGHLIGHT_NAME = 'chc-search-match';
 const SEARCH_CURRENT_HIGHLIGHT_NAME = 'chc-search-current';
@@ -267,23 +281,35 @@ function findBookmark(messageId) {
   ) || null;
 }
 
+function getCurrentMessage(message) {
+  if (!message) return null;
+  const messages = buildMessageExtractor();
+  return messages.find((current) => current.id === message.id) ||
+    messages[message.index] ||
+    message;
+}
+
 async function toggleMessageBookmark(message) {
   if (loadedBookmarksConversationId !== getConversationId()) {
     await loadConversationBookmarks();
   }
+  const currentMessage = getCurrentMessage(message);
+  if (!currentMessage) return;
   const conversationId = getConversationId();
-  const key = getBookmarkKey(conversationId, message.id);
-  const existing = findBookmark(message.id);
+  const key = getBookmarkKey(conversationId, currentMessage.id);
+  const existing = findBookmark(currentMessage.id);
   const nextBookmarks = existing
     ? conversationPanelState.bookmarks.filter((bookmark) => bookmark.key !== key)
     : [{
       key,
       conversationId,
-      messageId: message.id,
-      messageIndex: message.index,
-      role: message.role,
-      preview: message.preview ||
-        (message.markers.imageCount > 0 ? getPanelText('bookmarkImagePreview') : message.text.slice(0, 180)),
+      messageId: currentMessage.id,
+      messageIndex: currentMessage.index,
+      role: currentMessage.role,
+      preview: currentMessage.preview ||
+        (currentMessage.markers.imageCount > 0
+          ? getPanelText('bookmarkImagePreview')
+          : currentMessage.text.slice(0, 180)),
       timestamp: Date.now()
     }, ...conversationPanelState.bookmarks];
   await saveConversationBookmarks(nextBookmarks);
@@ -351,7 +377,63 @@ function ensureBookmarkSlot(anchor, role) {
       messageContainer.appendChild(slot);
     }
   }
+  if (role === 'user') {
+    observeUserBookmarkBubble(messageContainer, slot);
+  } else {
+    resetBookmarkSlotAlignment(slot);
+  }
   return slot;
+}
+
+function findUserMessageBubble(messageContainer) {
+  const containerRect = messageContainer.getBoundingClientRect();
+  const candidates = Array.from(messageContainer.querySelectorAll('div')).filter((element) => {
+    if (element.closest('.chc-bookmark-slot')) return false;
+    const rect = element.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0 || rect.width > containerRect.width) return false;
+    const style = getComputedStyle(element);
+    const background = style.backgroundColor;
+    const hasBackground = background &&
+      background !== 'transparent' &&
+      background !== 'rgba(0, 0, 0, 0)';
+    const radius = parseFloat(style.borderTopLeftRadius) || 0;
+    return hasBackground && radius >= 12 && (element.innerText || '').trim();
+  });
+
+  return candidates.sort((a, b) => {
+    const aRect = a.getBoundingClientRect();
+    const bRect = b.getBoundingClientRect();
+    return bRect.width * bRect.height - aRect.width * aRect.height;
+  })[0] || null;
+}
+
+function alignUserBookmarkSlot(slot, bubble) {
+  if (!slot?.isConnected || !bubble?.isConnected) return;
+  const container = slot.parentElement;
+  if (!container) return;
+  const containerRect = container.getBoundingClientRect();
+  const bubbleRect = bubble.getBoundingClientRect();
+  const rightOffset = Math.max(0, containerRect.right - bubbleRect.right);
+  slot.style.width = `${Math.round(bubbleRect.width)}px`;
+  slot.style.marginInlineEnd = `${Math.round(rightOffset)}px`;
+}
+
+function resetBookmarkSlotAlignment(slot) {
+  slot.style.removeProperty('width');
+  slot.style.removeProperty('margin-inline-end');
+}
+
+function observeUserBookmarkBubble(messageContainer, slot) {
+  const bubble = findUserMessageBubble(messageContainer);
+  if (!bubble) {
+    resetBookmarkSlotAlignment(slot);
+    return;
+  }
+  alignUserBookmarkSlot(slot, bubble);
+  if (bookmarkBubbleResizeObserver && bookmarkBubbleSlots.get(bubble) !== slot) {
+    bookmarkBubbleSlots.set(bubble, slot);
+    bookmarkBubbleResizeObserver.observe(bubble);
+  }
 }
 
 function refreshBookmarkContext() {
@@ -1060,15 +1142,47 @@ function ensureConversationPanelStyles() {
       bottom: 88px;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
       color: #fff;
-      cursor: pointer;
       display: flex;
       font: 700 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      gap: 6px;
       min-height: 36px;
-      padding: 0 12px;
+      overflow: hidden;
       position: fixed;
       right: 18px;
       z-index: 2147483600;
+    }
+    .chc-panel-toggle button {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      font: inherit;
+      min-height: 34px;
+    }
+    .chc-panel-toggle-open {
+      padding: 0 12px;
+    }
+    .chc-panel-toggle:hover .chc-panel-toggle-open,
+    .chc-panel-toggle:focus-within .chc-panel-toggle-open {
+      padding-right: 4px;
+    }
+    .chc-panel-toggle-dismiss {
+      display: none !important;
+      font-size: 15px !important;
+      padding: 0 12px 0 4px;
+    }
+    .chc-panel-toggle:hover .chc-panel-toggle-dismiss,
+    .chc-panel-toggle:focus-within .chc-panel-toggle-dismiss {
+      display: inline-flex !important;
+    }
+    .chc-panel-toggle-dismiss:hover,
+    .chc-panel-toggle-dismiss:focus-visible {
+      color: #fca5a5;
+    }
+    .chc-panel-toggle button:focus-visible {
+      outline: 2px solid #93c5fd;
+      outline-offset: -3px;
     }
     .chc-panel {
       background: #fff;
@@ -1313,7 +1427,7 @@ function ensureConversationPanelStyles() {
     }
     .chc-bookmark-slot[data-role="user"] {
       align-self: flex-end;
-      justify-content: flex-end;
+      justify-content: flex-start;
       width: var(--user-chat-width, 70%);
     }
     .chc-bookmark-slot[data-role="assistant"] {
@@ -1350,6 +1464,7 @@ function ensureConversationPanelStyles() {
 function getPanelText(key) {
   const fallback = {
     panelButton: 'Navigator',
+    panelButtonDismiss: 'Hide Navigator button',
     panelTitle: 'Conversation Navigator',
     panelSubtitle: 'Search, bookmark, and jump to important content',
     panelClose: 'Close',
@@ -1385,11 +1500,25 @@ function ensureConversationPanel() {
   if (conversationPanel) return conversationPanel;
   ensureConversationPanelStyles();
 
-  const toggle = document.createElement('button');
+  const toggle = document.createElement('div');
   toggle.className = 'chc-panel-toggle';
-  toggle.type = 'button';
-  toggle.textContent = panelButtonText();
-  toggle.addEventListener('click', () => setConversationPanelOpen(!conversationPanelState.isOpen));
+
+  const toggleOpen = document.createElement('button');
+  toggleOpen.className = 'chc-panel-toggle-open';
+  toggleOpen.type = 'button';
+  toggleOpen.textContent = panelButtonText();
+  toggleOpen.addEventListener('click', () => setConversationPanelOpen(true));
+
+  const toggleDismiss = document.createElement('button');
+  toggleDismiss.className = 'chc-panel-toggle-dismiss';
+  toggleDismiss.type = 'button';
+  toggleDismiss.textContent = '\u00d7';
+  toggleDismiss.title = getPanelText('panelButtonDismiss');
+  toggleDismiss.setAttribute('aria-label', getPanelText('panelButtonDismiss'));
+  toggleDismiss.addEventListener('click', () => toggle.remove());
+
+  toggle.appendChild(toggleOpen);
+  toggle.appendChild(toggleDismiss);
 
   const panel = document.createElement('aside');
   panel.className = 'chc-panel';
@@ -1953,9 +2082,12 @@ function renderBookmarksView(body) {
 
     const preview = document.createElement('div');
     preview.className = 'chc-result-preview';
-    const previewText = stripTurnRoleLabel(bookmark.preview);
+    const livePreview = anchor ? getTurnText(anchor).slice(0, 180) : '';
+    const previewText = stripTurnRoleLabel(bookmark.preview || livePreview);
     preview.textContent = previewText ||
-      (anchor?.querySelector('img, picture, video') ? getPanelText('bookmarkImagePreview') : bookmark.preview);
+      (anchor?.querySelector('img, picture, video')
+        ? getPanelText('bookmarkImagePreview')
+        : bookmark.preview || livePreview);
     const time = document.createElement('div');
     time.className = 'chc-bookmark-time';
     time.textContent = formatBookmarkTime(bookmark.timestamp);

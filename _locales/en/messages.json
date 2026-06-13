@@ -207,6 +207,10 @@
     "message": "Navigator",
     "description": "Floating conversation navigator button"
   },
+  "panelButtonDismiss": {
+    "message": "Hide Navigator button",
+    "description": "Accessible label for hiding the floating conversation navigator button on the current page"
+  },
   "panelTitle": {
     "message": "Conversation Navigator",
     "description": "Conversation navigator panel title"

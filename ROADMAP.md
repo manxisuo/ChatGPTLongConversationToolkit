@@ -363,6 +363,11 @@ Candidate features:
 - Better bookmark navigation.
 - Lightweight organization of saved answers, decisions, code snippets, and solutions.
 
+Data management:
+
+- Clear All Bookmarks.
+- Reset Local Data.
+
 ## v1.7: AI-Assisted Organization
 
 Goal:
