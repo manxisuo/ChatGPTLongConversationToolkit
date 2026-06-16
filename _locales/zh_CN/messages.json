@@ -4,20 +4,16 @@
     "description": "扩展名称"
   },
   "extensionDescription": {
-    "message": "搜索、收藏、导航和管理 ChatGPT 长对话。",
+    "message": "轻量管理 ChatGPT 长对话，隐藏或整理旧轮次，让页面保持清爽，并支持对话导航。",
     "description": "扩展描述"
   },
   "title": {
     "message": "ChatGPT 长对话工具箱",
     "description": "弹窗标题"
   },
-  "subtitle": {
-    "message": "搜索、收藏与长对话视图控制",
-    "description": "弹窗副标题"
-  },
-  "viewManagementTitle": {
-    "message": "对话视图管理",
-    "description": "弹窗视图管理功能分组标题"
+  "advancedToolsDisabled": {
+    "message": "无法打开对话导航器，请刷新 ChatGPT 后重试。",
+    "description": "对话导航器无法打开时的兜底提示"
   },
   "v140IntroTitle": {
     "message": "新增：对话导航器",
@@ -44,7 +40,7 @@
     "description": "视觉控制模式标题"
   },
   "safeModeDesc": {
-    "message": "只在屏幕上隐藏旧轮次。最安全，也最容易恢复。",
+    "message": "只隐藏旧轮次，安全且易恢复。",
     "description": "视觉控制模式说明"
   },
   "removeModeTitle": {
@@ -52,7 +48,7 @@
     "description": "移除模式标题"
   },
   "removeModeDesc": {
-    "message": "临时整理当前视图中的旧轮次，刷新 ChatGPT 后恢复。",
+    "message": "临时整理旧轮次，刷新后恢复。",
     "description": "移除模式说明"
   },
   "safeModeSelected": {
@@ -82,6 +78,10 @@
   "currentViewTitle": {
     "message": "当前状态",
     "description": "当前视图状态区域标题"
+  },
+  "currentViewEmpty": {
+    "message": "当前页面未检测到可管理的对话",
+    "description": "未检测到对话时的当前状态提示"
   },
   "visibleRoundsLabel": {
     "message": "显示",
@@ -189,7 +189,7 @@
     "description": "视图控制失败的错误前缀"
   },
   "autoMaintainLabel": {
-    "message": "自动保持上限",
+    "message": "自动保持",
     "description": "自动保持复选框标签"
   },
   "autoMaintainEnabled": {

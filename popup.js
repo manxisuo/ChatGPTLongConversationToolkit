@@ -181,13 +181,15 @@ function setCurrentRoundsDisplay(stats) {
 }
 
 function updateViewMetrics(stats) {
+  const cardEl = document.querySelector('.status-card');
   const visibleEl = document.getElementById('visibleRounds');
   const optimizedEl = document.getElementById('optimizedRounds');
   const reductionEl = document.getElementById('domReduction');
-  if (!visibleEl || !optimizedEl || !reductionEl) return;
+  if (!cardEl || !visibleEl || !optimizedEl || !reductionEl) return;
 
   const visible = stats?.visibleRounds || 0;
   const total = stats?.totalRounds || visible;
+  cardEl.dataset.empty = String(total <= 0);
   const optimized = Math.max(0, total - visible);
   const reduction = total > 0 ? Math.round((optimized / total) * 100) : 0;
 
@@ -265,7 +267,11 @@ async function openConversationNavigator({ completeIntro = false } = {}) {
       showStatus(getMessage('errorScriptLoad'), 'error');
       return false;
     }
-    await chrome.tabs.sendMessage(tab.id, { action: 'openConversationNavigator' });
+    const response = await chrome.tabs.sendMessage(tab.id, { action: 'openConversationNavigator' });
+    if (response?.success === false) {
+      showStatus(response.message || getMessage('advancedToolsDisabled'), 'info');
+      return false;
+    }
     if (completeIntro) {
       await chrome.storage.local.set({ showV140Intro: false });
       renderV140Intro(false);

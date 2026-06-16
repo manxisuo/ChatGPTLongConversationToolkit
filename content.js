@@ -8,6 +8,7 @@ const CLEANUP_MODES = {
 let autoMaintainEnabled = false;
 let autoMaintainKeepRounds = 10;
 let cleanupModeEnabled = CLEANUP_MODES.SAFE;
+let advancedToolsEnabled = false;
 let observer = null;
 let cleanupTimer = null;
 let badgeTimer = null;
@@ -50,6 +51,13 @@ const SEARCH_MATCH_LIMIT = 100;
 const SEARCH_HIGHLIGHT_NAME = 'chc-search-match';
 const SEARCH_CURRENT_HIGHLIGHT_NAME = 'chc-search-current';
 const BOOKMARKS_STORAGE_KEY = 'conversationBookmarks';
+
+function resolveAdvancedToolsEnabled(result) {
+  if (typeof result.advancedToolsEnabled === 'boolean') {
+    return result.advancedToolsEnabled;
+  }
+  return Boolean(result.conversationToolsEnabled);
+}
 
 function getMessage(key, substitutions = []) {
   if (extensionContextInvalidated || typeof chrome === 'undefined' || !chrome.i18n?.getMessage) {
@@ -254,7 +262,9 @@ async function loadConversationBookmarks() {
   } catch (error) {
     conversationPanelState.bookmarks = [];
   }
-  syncBookmarkButtons();
+  if (advancedToolsEnabled) {
+    syncBookmarkButtons();
+  }
 }
 
 async function saveConversationBookmarks(nextConversationBookmarks) {
@@ -316,6 +326,10 @@ async function toggleMessageBookmark(message) {
 }
 
 function ensureBookmarkButtons() {
+  if (!advancedToolsEnabled) {
+    removeBookmarkButtons();
+    return;
+  }
   ensureConversationPanelStyles();
   buildMessageExtractor().forEach((message) => {
     if (message.role !== 'user' && message.role !== 'assistant') return;
@@ -345,6 +359,10 @@ function ensureBookmarkButtons() {
     slot.appendChild(button);
   });
   syncBookmarkButtons();
+}
+
+function removeBookmarkButtons() {
+  document.querySelectorAll('.chc-bookmark-slot').forEach((slot) => slot.remove());
 }
 
 function ensureBookmarkSlot(anchor, role) {
@@ -437,6 +455,10 @@ function observeUserBookmarkBubble(messageContainer, slot) {
 }
 
 function refreshBookmarkContext() {
+  if (!advancedToolsEnabled) {
+    removeBookmarkButtons();
+    return;
+  }
   if (loadedBookmarksConversationId !== getConversationId()) {
     loadConversationBookmarks().then(() => {
       ensureBookmarkButtons();
@@ -448,11 +470,15 @@ function refreshBookmarkContext() {
 }
 
 function syncBookmarkButtons() {
+  if (!advancedToolsEnabled) {
+    removeBookmarkButtons();
+    return;
+  }
   document.querySelectorAll('.chc-bookmark-button').forEach((button) => {
     const bookmarked = Boolean(findBookmark(button.dataset.messageId));
     button.dataset.bookmarked = String(bookmarked);
     button.textContent = bookmarked
-      ? `⭐ ${getPanelText('bookmarkRemoveAction')}`
+      ? '★'
       : `☆ ${getPanelText('bookmarkAddAction')}`;
     const actionLabel = bookmarked
       ? getPanelText('bookmarkCancelAction')
@@ -1422,7 +1448,7 @@ function ensureConversationPanelStyles() {
       align-self: stretch;
       display: flex;
       justify-content: flex-start;
-      min-height: 18px;
+      min-height: 0;
       width: 100%;
     }
     .chc-bookmark-slot[data-role="user"] {
@@ -1441,10 +1467,17 @@ function ensureConversationPanelStyles() {
       cursor: pointer;
       display: inline-flex;
       font: 500 12px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      margin: 4px 0 2px;
-      opacity: 0.62;
+      margin: 2px 0 0;
+      opacity: 0;
       padding: 2px 0;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+      visibility: hidden;
+    }
+    :is(${getTurnSelector()}):hover .chc-bookmark-button,
+    :is(${getTurnSelector()}):focus-within .chc-bookmark-button,
+    .chc-bookmark-button[data-bookmarked="true"] {
+      opacity: 0.58;
+      visibility: visible;
     }
     .chc-bookmark-button:hover {
       opacity: 1;
@@ -1465,6 +1498,7 @@ function getPanelText(key) {
   const fallback = {
     panelButton: 'Navigator',
     panelButtonDismiss: 'Hide Navigator button',
+    advancedToolsDisabled: 'Navigator could not be opened. Refresh ChatGPT and try again.',
     panelTitle: 'Conversation Navigator',
     panelSubtitle: 'Search, bookmark, and jump to important content',
     panelClose: 'Close',
@@ -2267,15 +2301,20 @@ async function initAutoMaintain() {
       keepRounds: 10,
       cleanupMode: CLEANUP_MODES.SAFE,
       collapseOldMessages: true,
+      advancedToolsEnabled: false,
       conversationToolsEnabled: false
     });
+    advancedToolsEnabled = resolveAdvancedToolsEnabled(result);
     updateAutoMaintain(result.autoMaintain, result.keepRounds, resolveCleanupMode(result));
     await loadConversationBookmarks();
-    ensureBookmarkButtons();
     startBadgeObserver();
-    if (result.conversationToolsEnabled) {
+    if (advancedToolsEnabled) {
+      ensureBookmarkButtons();
       ensureConversationPanel();
       refreshConversationPanelMessages();
+    } else {
+      removeBookmarkButtons();
+      removeConversationPanel();
     }
     scheduleBadgeUpdate();
   } catch (e) {
@@ -2291,19 +2330,26 @@ chrome.storage.onChanged.addListener((changes) => {
     updateAutoMaintain(enabled, rounds, cleanupMode);
   }
 
-  if (changes.conversationToolsEnabled) {
-    if (changes.conversationToolsEnabled.newValue) {
+  if (changes.advancedToolsEnabled || changes.conversationToolsEnabled) {
+    advancedToolsEnabled = changes.advancedToolsEnabled
+      ? Boolean(changes.advancedToolsEnabled.newValue)
+      : Boolean(changes.conversationToolsEnabled.newValue);
+    if (advancedToolsEnabled) {
       ensureConversationPanel();
+      ensureBookmarkButtons();
       refreshConversationPanelMessages();
     } else {
+      removeBookmarkButtons();
       removeConversationPanel();
     }
   }
 
   if (changes[BOOKMARKS_STORAGE_KEY]) {
     loadConversationBookmarks().then(() => {
-      ensureBookmarkButtons();
-      renderConversationPanel();
+      if (advancedToolsEnabled) {
+        ensureBookmarkButtons();
+        renderConversationPanel();
+      }
     });
   }
 });
@@ -2343,7 +2389,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'openConversationNavigator') {
+    if (!advancedToolsEnabled) {
+      advancedToolsEnabled = true;
+      ensureBookmarkButtons();
+    }
     ensureConversationPanel();
+    refreshConversationPanelMessages();
     setConversationPanelOpen(true);
     sendResponse({ success: true });
     return true;

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## Version 1.4.1 - Cleaner Core Popup
+
+- Restored the popup to a simple core-control layout focused on Visual Hide and Temporary Trim
+- Moved Conversation Navigator access to a compact footer link instead of a prominent popup card
+- Kept advanced search and bookmark UI out of the main popup by default
+- Kept Visual Hide, Temporary Trim, and Auto-maintain available independently of advanced tools
+- Hid all message bookmark controls and bookmark indicators until Navigator is user-opened
+- Changed bookmark actions to appear only on message hover after Navigator is opened
+- Reduced bookmarked-message UI to a subtle star indicator
+- Preserved existing bookmark data while keeping the ChatGPT page clean by default
+
 ## Version 1.4.0 - Conversation Navigator: Search + Basic Bookmarks
 
 - Added an in-page Conversation Navigator opened from the extension popup

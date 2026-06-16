@@ -2,7 +2,7 @@
 
 A lightweight, local-first Chrome and Edge extension for searching, navigating, organizing, and revisiting long ChatGPT conversations.
 
-Version 1.4.0 introduces Conversation Navigator: search loaded messages, bookmark important content, and jump back to relevant User or Assistant messages. The extension also keeps the latest N conversation exchanges visible and can hide older messages behind a small expandable placeholder.
+Version 1.4.1 restores a cleaner core popup and ChatGPT reading experience. The popup focuses on Visual Hide and Temporary Trim, while advanced tools such as Conversation Navigator, search, and bookmarks stay behind a compact optional Navigator link. The extension also keeps the latest N conversation exchanges visible and can hide older messages behind a small expandable placeholder.
 
 It only works with conversation content currently available on the page. It does not delete ChatGPT account data or upload conversation content.
 
@@ -10,8 +10,9 @@ It only works with conversation content currently available on the page. It does
 
 Long Conversation Experience:
 
-- Search loaded User and Assistant messages with message-level results
-- Bookmark important messages locally and return to them quickly
+- Use the optional Navigator for search and local bookmarks
+- Search loaded User and Assistant messages with message-level results from Navigator
+- Bookmark important messages locally and return to them quickly from Navigator
 - Jump to visible or visually hidden messages
 - Keep recent conversation exchanges visible
 - Hide older exchanges visually when a conversation becomes hard to scan
@@ -25,14 +26,16 @@ The extension no longer treats performance cleanup as the core product promise. 
 - Configurable recent-exchange limit, defaulting to 10 exchanges
 - Visual Hide: lowest risk, expandable in place
 - Temporary Trim: strongest page reduction, restored by refreshing ChatGPT
-- Conversation Navigator with message-level search and local bookmarks
+- Optional Conversation Navigator with message-level search and local bookmarks
 - Optional auto-maintain mode for long sessions
 - Conversation exchange count badge
 - English and Simplified Chinese UI
 
+Advanced conversation tools are not shown in the main popup by default. Use the compact **Conversation Navigator** footer link when you want search, bookmarks, and jump navigation.
+
 The Navigator shows matching User and Assistant messages with context previews, rather than only stepping through text matches. It only covers conversation content currently available in the ChatGPT page. With auto-maintain enabled, a hidden result is temporarily revealed without changing the hidden count or disabling the limit; it is hidden again when navigation moves away or closes. Content removed by Temporary Trim is not searchable until the page is refreshed.
 
-Each loaded User or Assistant message can be bookmarked. Bookmarks store only the conversation/message identifiers, a short preview, role, and timestamp in `chrome.storage.local`. They are not uploaded.
+Each loaded User or Assistant message can be bookmarked after Navigator is opened. Bookmark actions appear only on message hover, and bookmarked messages use a subtle star indicator. Bookmarks store only the conversation/message identifiers, a short preview, role, and timestamp in `chrome.storage.local`. They are not uploaded.
 
 The Navigator keeps Search and Bookmarks as separate tabs. The Bookmarks tab always shows the current conversation's bookmark count.
 
@@ -68,7 +71,7 @@ All behavior runs locally in the browser page. The extension does not store conv
 
 To search and revisit important content:
 
-1. Click **Open →** in the Conversation Navigator section
+1. Click **Conversation Navigator** in the popup footer
 2. Enter a keyword to see message-level results
 3. Click a User or Assistant result to jump directly to that message
 4. Use **Bookmark** on a message to save it locally

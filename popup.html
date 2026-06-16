@@ -11,7 +11,6 @@
     <header class="header">
       <div>
         <h1 data-i18n="title">ChatGPT Conversation Toolkit</h1>
-        <p data-i18n="subtitle">Long conversation control</p>
       </div>
     </header>
 
@@ -21,18 +20,9 @@
       <button id="dismissV140Intro" type="button" class="link-button intro-action" data-i18n="v140IntroAction">Open now</button>
     </section>
 
-    <section class="navigator-entry">
-      <div>
-        <div class="navigator-entry-title" data-i18n="searchEntryTitle">Conversation Navigator</div>
-        <div class="navigator-entry-desc" data-i18n="searchEntryDesc">Search, bookmark, and jump to important content.</div>
-      </div>
-      <button id="openConversationNavigator" type="button" class="btn btn-primary navigator-entry-button" data-i18n="searchEntryAction">Open →</button>
-    </section>
-
-    <div class="feature-group-title" data-i18n="viewManagementTitle">Conversation view management</div>
-
     <section class="status-card" aria-live="polite">
       <div class="section-label" data-i18n="currentViewTitle">Current view</div>
+      <div id="emptyViewState" class="status-empty" data-i18n="currentViewEmpty">No manageable conversation detected on this page.</div>
       <div class="status-grid">
         <div class="status-metric wide">
           <span class="metric-label" data-i18n="visibleRoundsLabel">Visible</span>
@@ -85,7 +75,6 @@
     </section>
 
     <button id="removeOldRounds" class="btn btn-outline view-control-action">
-      <span class="btn-icon" aria-hidden="true">✦</span>
       <span data-i18n="cleanButton">Apply view control</span>
     </button>
 
@@ -96,7 +85,7 @@
       <span class="popup-footer-separator" aria-hidden="true">·</span>
       <button id="footerFeedbackLink" type="button" class="popup-footer-link" data-i18n="footerFeedback">Feedback</button>
       <span class="popup-footer-separator" aria-hidden="true">·</span>
-      <span>v1.4.0</span>
+      <button id="openConversationNavigator" type="button" class="popup-footer-link" data-i18n="searchEntryTitle">Conversation Navigator</button>
     </footer>
   </main>
   <script src="popup.js"></script>

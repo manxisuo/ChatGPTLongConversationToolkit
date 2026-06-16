@@ -6,6 +6,8 @@ Make long ChatGPT conversations easier to search, navigate, and revisit.
 
 Features:
 
+* Keep ChatGPT pages clean by default
+* Open advanced search and bookmark tools only when needed
 * Search messages within the currently loaded conversation
 * Jump directly to matching messages and search results
 * Bookmark important user and assistant messages for later reference
@@ -22,6 +24,8 @@ This extension works only with content currently available on the page. It does 
 
 功能：
 
+* 默认保持 ChatGPT 页面简洁
+* 仅在需要时打开高级搜索与收藏工具
 * 在当前已加载的对话内容中搜索消息
 * 直接跳转到匹配结果和目标消息
 * 收藏重要的用户消息和助手回复

@@ -4,20 +4,16 @@
     "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "Search, bookmark, navigate, and manage long ChatGPT conversations.",
+    "message": "A lightweight toolkit to hide, trim, and navigate long ChatGPT conversations while keeping the page clean.",
     "description": "Extension description"
   },
   "title": {
     "message": "ChatGPT Long Conversation Toolkit",
     "description": "Popup title"
   },
-  "subtitle": {
-    "message": "Search, bookmarks, and long conversation view control",
-    "description": "Popup subtitle"
-  },
-  "viewManagementTitle": {
-    "message": "Conversation view management",
-    "description": "Popup view management feature group title"
+  "advancedToolsDisabled": {
+    "message": "Navigator could not be opened. Refresh ChatGPT and try again.",
+    "description": "Fallback status shown when Conversation Navigator cannot be opened"
   },
   "v140IntroTitle": {
     "message": "New: Conversation Navigator",
@@ -44,7 +40,7 @@
     "description": "Visual mode title"
   },
   "safeModeDesc": {
-    "message": "Only hides older exchanges on screen. Safest and easiest to restore.",
+    "message": "Hides old exchanges only. Safe and easy to restore.",
     "description": "Visual mode description"
   },
   "removeModeTitle": {
@@ -52,7 +48,7 @@
     "description": "Remove mode title"
   },
   "removeModeDesc": {
-    "message": "Temporarily trims older exchanges from this view. Refresh ChatGPT to restore.",
+    "message": "Temporarily trims old exchanges. Refresh to restore.",
     "description": "Remove mode description"
   },
   "safeModeSelected": {
@@ -82,6 +78,10 @@
   "currentViewTitle": {
     "message": "Current view",
     "description": "Current view status section title"
+  },
+  "currentViewEmpty": {
+    "message": "No manageable conversation detected on this page.",
+    "description": "Current view empty state when no conversation is detected"
   },
   "visibleRoundsLabel": {
     "message": "Visible exchanges",

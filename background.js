@@ -51,7 +51,9 @@ chrome.runtime.onInstalled.addListener((details) => {
       autoRemove: false,
       cleanupMode: 'safe',
       collapseOldMessages: true,
-      showV140Intro: true
+      advancedToolsEnabled: false,
+      conversationToolsEnabled: false,
+      showV140Intro: false
     });
   } else if (details.reason === 'update') {
     chrome.storage.local.get({ cleanupMode: null }, (settings) => {
@@ -63,11 +65,11 @@ chrome.runtime.onInstalled.addListener((details) => {
       }
     });
 
-    if (details.previousVersion && details.previousVersion !== '1.4.0') {
-      chrome.storage.local.set({
-        showV140Intro: true
-      });
-    }
+    chrome.storage.local.set({
+      advancedToolsEnabled: false,
+      conversationToolsEnabled: false,
+      showV140Intro: false
+    });
   }
 });
 
